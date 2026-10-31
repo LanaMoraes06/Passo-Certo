@@ -10,10 +10,11 @@
 using System;
 using System.Reflection;
 
+[assembly: Microsoft.Extensions.Configuration.UserSecrets.UserSecretsIdAttribute("58c08654-d115-4667-9642-a0961840f9ff")]
 [assembly: System.Reflection.AssemblyCompanyAttribute("PassoCerto.Web")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ff51938d1a004d829c1141112d6e8c959682fa51")]
 [assembly: System.Reflection.AssemblyProductAttribute("PassoCerto.Web")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PassoCerto.Web")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

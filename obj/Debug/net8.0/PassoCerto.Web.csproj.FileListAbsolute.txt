@@ -35,3 +35,4 @@
 /home/lana/PassoCerto.Web/obj/Debug/net8.0/PassoCerto.Web.pdb
 /home/lana/PassoCerto.Web/obj/Debug/net8.0/PassoCerto.Web.genruntimeconfig.cache
 /home/lana/PassoCerto.Web/obj/Debug/net8.0/ref/PassoCerto.Web.dll
+/home/lana/PassoCerto.Web/obj/Debug/net8.0/PassoCerto.Web.sourcelink.json
