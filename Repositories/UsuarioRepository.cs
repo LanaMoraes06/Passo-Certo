@@ -258,7 +258,8 @@ public class UsuarioRepository : IUsuarioRepository
 
             Perfil = Enum.Parse<PerfilUsuario>(
                 reader.GetString(
-                    reader.GetOrdinal("perfil"))),
+                    reader.GetOrdinal("perfil")),
+                     ignoreCase: true),
 
             Ativo = reader.GetBoolean(
                 reader.GetOrdinal("ativo")),
