@@ -1,0 +1,115 @@
+@page
+@model PassoCerto.Web.Pages.Inspecoes.CriarModel
+
+@{
+    ViewData["Title"] = "Nova inspeção";
+}
+
+<div class="container py-4">
+
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+
+            <div class="d-flex justify-content-between
+                        align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-1">Nova inspeção</h1>
+                    <p class="text-muted mb-0">
+                        Preencha os dados da visita para
+                        iniciar uma inspeção.
+                    </p>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+
+                    <form method="post">
+
+                        <div asp-validation-summary="ModelOnly"
+                             class="text-danger mb-3">
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Input.LojaId"
+                                   class="form-label">
+                                Loja
+                            </label>
+
+                            <select asp-for="Input.LojaId"
+                                    class="form-select">
+
+                                <option value="">
+                                    Selecione uma loja
+                                </option>
+
+                                @foreach (var loja in Model.Lojas)
+                                {
+                                    <option value="@loja.Id">
+                                        @loja.Codigo - @loja.Nome
+                                    </option>
+                                }
+
+                            </select>
+
+                            <span asp-validation-for="Input.LojaId"
+                                  class="text-danger">
+                            </span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Input.DataVisita"
+                                   class="form-label">
+                                Data da visita
+                            </label>
+
+                            <input asp-for="Input.DataVisita"
+                                   type="date"
+                                   class="form-control" />
+
+                            <span asp-validation-for="Input.DataVisita"
+                                  class="text-danger">
+                            </span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Input.ObservacaoGeral"
+                                   class="form-label">
+                                Observação geral
+                            </label>
+
+                            <textarea asp-for="Input.ObservacaoGeral"
+                                      class="form-control"
+                                      rows="4"
+                                      placeholder="Informações adicionais sobre a visita (opcional)"></textarea>
+
+                            <span asp-validation-for="Input.ObservacaoGeral"
+                                  class="text-danger">
+                            </span>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a asp-page="/Lojas/Index"
+                               class="btn btn-outline-secondary">
+                                Cancelar
+                            </a>
+
+                            <button type="submit"
+                                    class="btn btn-primary">
+                                Criar rascunho
+                            </button>
+                        </div>
+
+                    </form>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -11,8 +11,6 @@ public class InspecaoRepository(NpgsqlDataSource dataSource)
 {
     private readonly NpgsqlDataSource _dataSource = dataSource;
 
-    // Filtro de autorização utilizado nas consultas.
-    // Diretoria/Admin veem tudo; Supervisor vê suas regiões.
     private const string FiltroAcesso = """
         EXISTS (
             SELECT 1
@@ -132,7 +130,6 @@ public class InspecaoRepository(NpgsqlDataSource dataSource)
         return inspecoes;
     }
 
-    // SELECT - Respostas de uma inspeção autorizada
     public async Task<List<RespostaInspecao>> ListarRespostasAsync(
         long inspecaoId, long usuarioId)
     {
@@ -543,7 +540,6 @@ public class InspecaoRepository(NpgsqlDataSource dataSource)
                 "A inspeção possui respostas incompletas ou inválidas.");
         }
 
-        // RN01: N/A não entra no cálculo.
         long aplicaveis = quantidadeOk + quantidadePendente;
 
         decimal? percentual = aplicaveis == 0
@@ -604,7 +600,7 @@ public class InspecaoRepository(NpgsqlDataSource dataSource)
             ObservacaoGeral = LerStringNullable(
                 reader, "observacao_geral"),
             Status = Enum.Parse<StatusInspecao>(
-                reader.GetString(reader.GetOrdinal("status"))),
+                reader.GetString(reader.GetOrdinal("status")), ignoreCase: true),
             PercentualRealizacao = reader.IsDBNull(
                 reader.GetOrdinal("percentual_realizacao"))
                 ? null
@@ -647,7 +643,7 @@ public class InspecaoRepository(NpgsqlDataSource dataSource)
                 reader.GetOrdinal("item_ordem")),
             Resposta = respostaTexto is null
                 ? null
-                : Enum.Parse<TipoResposta>(respostaTexto),
+                : Enum.Parse<TipoResposta>(respostaTexto, ignoreCase: true),
             Observacao = LerStringNullable(reader, "observacao"),
             CriadoEm = reader.GetDateTime(
                 reader.GetOrdinal("criado_em")),
