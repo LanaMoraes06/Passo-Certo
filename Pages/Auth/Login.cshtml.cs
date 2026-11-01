@@ -1,4 +1,3 @@
-
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -27,11 +26,9 @@ public class LoginModel(AuthService authService) : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        // Valida [Required], [StringLength], etc.
         if (!ModelState.IsValid)
             return Page();
 
-        // Verifica as credenciais no AuthService.
         var usuario = await authService.AutenticarAsync(Input);
 
         if (usuario is null)
