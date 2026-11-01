@@ -237,4 +237,9 @@ public class ChecklistRepository(NpgsqlDataSource dataSource) : IChecklistReposi
             AtualizadoEm = reader.GetDateTime(reader.GetOrdinal("atualizado_em"))
         };
     }
+
+    public Task<List<CategoriaChecklist>> ListarCategoriasAsync(long categoriaId)
+    {
+        throw new NotImplementedException();
+    }
 }

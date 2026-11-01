@@ -8,6 +8,5 @@ public interface IChecklistRepository
 
     Task<List<ItemChecklist>> ListarItensAtivosAsync();
 
-    Task<List<ItemChecklist>> ListarPorCategoriaAsync(
-        long categoriaId);
+    Task<List<ItemChecklist>> ListarPorCategoriaAsync(long categoriaId);
 }
