@@ -210,5 +210,68 @@ public class LojaRepository(NpgsqlDataSource dataSource) : ILojaRepository
                 reader.GetOrdinal("atualizado_em"))
         };
     }
+public async Task<List<Loja>> ListarPermitidasAsync(
+    long usuarioId)
+{
+    const string sql = """
+        SELECT
+            l.id,
+            l.codigo,
+            l.nome,
+            l.gerente_nome,
+            l.regiao_id,
+            l.ativo,
+            l.criado_em,
+            l.atualizado_em
+        FROM lojas l
+        INNER JOIN usuarios u
+            ON u.id = @UsuarioId
+        WHERE u.ativo = TRUE
+          AND l.ativo = TRUE
+          AND (
+              u.perfil IN ('DIRETORIA', 'ADMINISTRADOR')
+              OR (
+                  u.perfil = 'SUPERVISOR'
+                  AND EXISTS (
+                      SELECT 1
+                      FROM usuarios_regioes ur
+                      WHERE ur.usuario_id = u.id
+                        AND ur.regiao_id = l.regiao_id
+                  )
+              )
+          )
+        ORDER BY l.nome
+        """;
 
+    var lojas = new List<Loja>();
+
+    await using var connection =
+        await _dataSource.OpenConnectionAsync();
+
+    await using var command =
+        new NpgsqlCommand(sql, connection);
+
+    command.Parameters.AddWithValue(
+        "UsuarioId", usuarioId);
+
+    await using var reader =
+        await command.ExecuteReaderAsync();
+
+    while (await reader.ReadAsync())
+    {
+        lojas.Add(new Loja
+        {
+            Id = reader.GetInt64(0),
+            Codigo = reader.GetString(1),
+            Nome = reader.GetString(2),
+            GerenteNome = reader.GetString(3),
+            RegiaoId = reader.GetInt64(4),
+            Ativo = reader.GetBoolean(5),
+            CriadoEm = reader.GetDateTime(6),
+            AtualizadoEm = reader.GetDateTime(7)
+        });
+    }
+
+    return lojas;
+}
 }
