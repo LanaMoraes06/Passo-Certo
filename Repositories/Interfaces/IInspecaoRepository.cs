@@ -20,4 +20,8 @@ public interface IInspecaoRepository
 
     Task<bool> ConcluirAsync(
         long inspecaoId, long usuarioId);
+
+    Task<List<Inspecao>> ListarPorLojaAsync(long lojaId, long usuarioId);
+    
+    Task<List<RespostaInspecao>> ListarRespostasAsync(long inspecaoId, long usuarioId);
 }
