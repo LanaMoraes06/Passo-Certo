@@ -79,6 +79,13 @@ builder.Services.AddAuthorizationBuilder()
     
     });
     
+
+    builder.Services.AddScoped<DashboardService>();
+    builder.Services.AddScoped<ChecklistService>();
+    builder.Services.AddScoped<InspecaoService>();
+    builder.Services.AddScoped<LojaService>();
+
+    
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
