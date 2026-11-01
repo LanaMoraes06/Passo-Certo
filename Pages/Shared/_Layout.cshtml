@@ -11,6 +11,15 @@
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        @if (User.Identity?.IsAuthenticated == true)
+{
+    <form method="post" asp-page="/Auth/Logout">
+        <button type="submit"
+                class="btn btn-outline-danger">
+            Sair
+        </button>
+    </form>
+}
             <div class="container">
                 <a class="navbar-brand" asp-area="" asp-page="/Index">PassoCerto.Web</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
