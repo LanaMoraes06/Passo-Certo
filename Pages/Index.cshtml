@@ -1,10 +1,158 @@
 ﻿@page
 @model IndexModel
+
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Início";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="container py-4">
+
+    <section class="hero-passo-certo rounded-4 p-4 p-md-5 mb-5 text-white">
+        <div class="row align-items-center g-4">
+
+            <div class="col-lg-8">
+                <span class="badge bg-light text-primary mb-3">
+                    Sistema de inspeções
+                </span>
+
+                <h1 class="display-6 fw-bold mb-3">
+                    Bem-vindo ao PassoCerto!
+                </h1>
+
+                <p class="lead mb-4 text-white-50">
+                    Gerencie visitas, acompanhe checklists e
+                    mantenha a qualidade das lojas em cada etapa.
+                </p>
+
+                <a asp-page="/Inspecoes/Index"
+                   class="btn btn-light btn-lg">
+                    Ver inspeções
+                </a>
+
+                @if (User.IsInRole("SUPERVISOR"))
+                {
+                    <a asp-page="/Inspecoes/Criar"
+                       class="btn btn-outline-light btn-lg ms-2">
+                        Nova inspeção
+                    </a>
+                }
+            </div>
+
+            <div class="col-lg-4 text-center d-none d-lg-block">
+                <div class="hero-symbol">
+                    ✓
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Atalhos -->
+    <div class="mb-4">
+        <h2 class="h4 fw-bold">Acesso rápido</h2>
+        <p class="text-muted">
+            Escolha uma funcionalidade para começar.
+        </p>
+    </div>
+
+    <div class="row g-4">
+
+        <div class="col-md-6 col-xl-4">
+            <div class="card feature-card h-100">
+                <div class="card-body p-4">
+                    <div class="feature-icon mb-3">🏬</div>
+
+                    <h3 class="h5 fw-bold">Lojas</h3>
+
+                    <p class="text-muted">
+                        Consulte as unidades disponíveis
+                        para seu perfil de acesso.
+                    </p>
+
+                    <a asp-page="/Lojas/Index"
+                       class="btn btn-outline-primary">
+                        Consultar lojas
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xl-4">
+            <div class="card feature-card h-100">
+                <div class="card-body p-4">
+                    <div class="feature-icon mb-3">📋</div>
+
+                    <h3 class="h5 fw-bold">Inspeções</h3>
+
+                    <p class="text-muted">
+                        Acompanhe os registros de visitas,
+                        rascunhos e inspeções concluídas.
+                    </p>
+
+                    <a asp-page="/Inspecoes/Index"
+                       class="btn btn-outline-primary">
+                        Ver inspeções
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xl-4">
+            <div class="card feature-card h-100">
+                <div class="card-body p-4">
+                    <div class="feature-icon mb-3">📊</div>
+
+                    <h3 class="h5 fw-bold">Dashboard</h3>
+
+                    <p class="text-muted">
+                        Visualize indicadores, desempenho
+                        regional e principais pendências.
+                    </p>
+
+                    <a asp-page="/Dashboard/Index"
+                       class="btn btn-outline-primary">
+                        Ver indicadores
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        @if (User.IsInRole("SUPERVISOR"))
+        {
+            <div class="col-md-6 col-xl-4">
+                <div class="card feature-card h-100">
+                    <div class="card-body p-4">
+                        <div class="feature-icon mb-3">➕</div>
+
+                        <h3 class="h5 fw-bold">Nova inspeção</h3>
+
+                        <p class="text-muted">
+                            Inicie uma visita e preencha
+                            o checklist de uma loja.
+                        </p>
+
+                        <a asp-page="/Inspecoes/Criar"
+                           class="btn btn-primary">
+                            Criar inspeção
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+
+    </div>
+
+   
+    <div class="mt-5 p-4 bg-light rounded-4 border">
+        <h2 class="h5 fw-bold">
+            Qualidade em cada passo.
+        </h2>
+
+        <p class="text-muted mb-0">
+            O PassoCerto centraliza as inspeções das lojas,
+            facilita o acompanhamento de pendências e
+            apoia a tomada de decisões.
+        </p>
+    </div>
+
 </div>
