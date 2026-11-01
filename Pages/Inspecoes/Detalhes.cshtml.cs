@@ -46,8 +46,16 @@ public class DetalhesModel(
         }
         catch (BusinessException ex)
         {
-            ModelState.AddModelError(
-                string.Empty, ex.Message);
+            var resultado = await CarregarAsync(
+                id,
+                preservarInput: true);
+
+            if (resultado is not PageResult)
+                return resultado;
+
+            AdicionarErrosNosCampos(ex.Message);
+
+            return Page();
         }
         catch (ForbiddenException)
         {
@@ -57,9 +65,8 @@ public class DetalhesModel(
         {
             return NotFound();
         }
-
-        return await CarregarAsync(id, preservarInput: true);
     }
+
 
     public async Task<IActionResult> OnPostConcluirAsync(long id)
     {
@@ -67,11 +74,9 @@ public class DetalhesModel(
 
         try
         {
-            // Primeiro salva as respostas enviadas pelo formulário.
             await inspecaoService.SalvarRascunhoAsync(
                 id, Input, usuarioId);
 
-            // Depois valida e conclui a inspeção.
             await inspecaoService.ConcluirAsync(
                 id, usuarioId);
 
@@ -82,8 +87,16 @@ public class DetalhesModel(
         }
         catch (BusinessException ex)
         {
-            ModelState.AddModelError(
-                string.Empty, ex.Message);
+            var resultado = await CarregarAsync(
+                id,
+                preservarInput: true);
+
+            if (resultado is not PageResult)
+                return resultado;
+
+            AdicionarErrosNosCampos(ex.Message);
+
+            return Page();
         }
         catch (ForbiddenException)
         {
@@ -93,8 +106,6 @@ public class DetalhesModel(
         {
             return NotFound();
         }
-
-        return await CarregarAsync(id, preservarInput: true);
     }
 
     private async Task<IActionResult> CarregarAsync(
@@ -143,4 +154,58 @@ public class DetalhesModel(
 
     public List<TipoResposta> OpcoesResposta { get; } =
         Enum.GetValues<TipoResposta>().ToList();
+
+
+    private void AdicionarErrosNosCampos(string mensagem)
+    {
+        bool encontrouErro = false;
+    
+        foreach (var entrada in Itens.Select((valor, indice) =>
+                     new { valor, indice }))
+        {
+            string nome = entrada.valor.ItemTitulo;
+    
+            string chaveResposta =
+                $"Input.Respostas[{entrada.indice}].Resposta";
+    
+            string chaveObservacao =
+                $"Input.Respostas[{entrada.indice}].Observacao";
+    
+            string erroResposta =
+                $"O item '{nome}' não foi respondido.";
+    
+            string erroObservacao =
+                $"O item '{nome}' exige observação.";
+    
+            if (mensagem.Contains(
+                erroResposta,
+                StringComparison.OrdinalIgnoreCase))
+            {
+                ModelState.AddModelError(
+                    chaveResposta,
+                    "Selecione uma resposta para este item.");
+    
+                encontrouErro = true;
+            }
+    
+            if (mensagem.Contains(
+                erroObservacao,
+                StringComparison.OrdinalIgnoreCase))
+            {
+                ModelState.AddModelError(
+                    chaveObservacao,
+                    "Informe uma observação para este item pendente.");
+    
+                encontrouErro = true;
+            }
+        }
+    
+        if (!encontrouErro)
+        {
+            ModelState.AddModelError(
+                string.Empty,
+                mensagem);
+        }
+    }
+
 }

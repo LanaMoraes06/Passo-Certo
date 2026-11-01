@@ -1,31 +1,62 @@
 @page "{id:long}"
 @model PassoCerto.Web.Pages.Inspecoes.DetalhesModel
+@using PassoCerto.Web.Models.Enum
 
 @{
     ViewData["Title"] = "Detalhes da inspeção";
+
+    var categorias = Model.Itens
+        .Select((item, indice) => new { item, indice })
+        .GroupBy(x => new
+        {
+            x.item.CategoriaOrdem,
+            x.item.CategoriaNome
+        })
+        .OrderBy(g => g.Key.CategoriaOrdem)
+        .ToList();
+
+    int totalItens = Model.Itens.Count;
+
+    int respondidos = Model.Input.Respostas
+        .Count(r => r.Resposta.HasValue);
+
+    int percentualPreenchimento = totalItens == 0
+        ? 0
+        : (int)Math.Round(
+            respondidos * 100.0 / totalItens);
 }
 
 <div class="d-flex justify-content-between
-            align-items-center mb-4">
+            align-items-center flex-wrap gap-3 mb-4">
 
     <div>
-        <h1 class="h3">
+        <h1 class="h3 mb-1">
             Inspeção #@Model.Inspecao.Id
         </h1>
+
         <p class="text-muted mb-0">
             Loja @Model.Inspecao.LojaId
             • @Model.Inspecao.DataVisita.ToString("dd/MM/yyyy")
         </p>
     </div>
 
-    <span class="badge bg-secondary fs-6">
-        @Model.Inspecao.Status
-    </span>
+    @if (Model.Inspecao.Status == StatusInspecao.CONCLUIDA)
+    {
+        <span class="badge bg-success fs-6">
+            Concluída
+        </span>
+    }
+    else
+    {
+        <span class="badge bg-warning text-dark fs-6">
+            Rascunho
+        </span>
+    }
 </div>
 
 @if (TempData["Sucesso"] is string mensagem)
 {
-    <div class="alert alert-success">
+    <div class="alert alert-success" role="alert">
         @mensagem
     </div>
 }
@@ -34,87 +65,166 @@
      class="text-danger mb-3">
 </div>
 
-<form method="post">
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
 
-    <div class="card shadow-sm mb-4">
-        <div class="card-header">
-            <strong>Checklist da visita</strong>
+        <div class="d-flex justify-content-between
+                    align-items-center mb-2">
+
+            <h2 class="h6 mb-0">
+                Progresso do checklist
+            </h2>
+
+            <span id="textoProgresso"
+                  class="fw-semibold text-primary"
+                  aria-live="polite">
+                @respondidos de @totalItens itens
+            </span>
         </div>
 
-        <div class="card-body">
+        <div class="progress"
+             style="height: 12px;">
 
-            @if (!Model.Itens.Any())
-            {
-                <div class="alert alert-warning">
-                    Nenhum item encontrado para esta inspeção.
-                </div>
-            }
+            <div id="barraProgresso"
+                 class="progress-bar bg-success"
+                 role="progressbar"
+                 style="width: @(percentualPreenchimento)%"
+                 aria-valuenow="@percentualPreenchimento"
+                 aria-valuemin="0"
+                 aria-valuemax="100">
+            </div>
+        </div>
 
-            @for (int i = 0; i < Model.Itens.Count; i++)
-            {
-                var item = Model.Itens[i];
+        <small id="percentualProgresso"
+               class="text-muted d-block mt-2">
+            @percentualPreenchimento% preenchido
+        </small>
 
-                <div class="border-bottom py-3">
+        <small class="text-muted">
+            OK, PENDENTE e NA contam como respostas preenchidas.
+        </small>
 
-                    <input type="hidden"
-                           asp-for="Input.Respostas[i].Id" />
+    </div>
+</div>
 
-                    <h2 class="h6 mb-3">
-                        @(i + 1). @item.ItemTitulo
+<form method="post" id="formInspecao">
+
+    @if (!Model.Itens.Any())
+    {
+        <div class="alert alert-warning">
+            Nenhum item encontrado para esta inspeção.
+        </div>
+    }
+
+    @foreach (var categoria in categorias)
+    {
+        <div class="card shadow-sm mb-4">
+
+            <div class="card-header bg-white py-3">
+                <div class="d-flex justify-content-between
+                            align-items-center gap-2">
+
+                    <h2 class="h5 mb-0">
+                        @categoria.Key.CategoriaNome
                     </h2>
 
-                    <div class="mb-3">
-                        <label class="form-label">
-                            Resposta
-                        </label>
+                    <span class="badge bg-secondary">
+                        @categoria.Count() itens
+                    </span>
 
-                        <select asp-for="Input.Respostas[i].Resposta"
-                                class="form-select"
-                                disabled="@(!Model.PodeEditar)">
-
-                            <option value="">
-                                Selecione uma resposta
-                            </option>
-
-                            @foreach (var opcao in Model.OpcoesResposta)
-                            {
-                                <option value="@opcao">
-                                    @opcao
-                                </option>
-                            }
-                        </select>
-
-                        <span asp-validation-for="Input.Respostas[i].Resposta"
-                              class="text-danger">
-                        </span>
-                    </div>
-
-                    <div class="mb-2">
-                        <label class="form-label">
-                            Observação
-                        </label>
-
-                        <textarea asp-for="Input.Respostas[i].Observacao"
-                                  class="form-control"
-                                  rows="2"
-                                  disabled="@(!Model.PodeEditar)"
-                                  placeholder="Obrigatória para respostas PENDENTE"></textarea>
-                    </div>
                 </div>
-            }
-        </div>
-    </div>
+            </div>
 
-    <div class="d-flex justify-content-between gap-2">
+            <div class="card-body">
+
+                @foreach (var entrada in categoria
+                    .OrderBy(x => x.item.ItemOrdem))
+                {
+                    int i = entrada.indice;
+                    var item = entrada.item;
+
+                    <div class="border-bottom py-3">
+
+                        <input type="hidden"
+                               asp-for="Input.Respostas[i].Id" />
+
+                        <h3 class="h6 fw-bold mb-2">
+                            @item.ItemTitulo
+                        </h3>
+
+                        @if (!string.IsNullOrWhiteSpace(item.ItemDescricao))
+                        {
+                            <p class="text-muted small">
+                                @item.ItemDescricao
+                            </p>
+                        }
+
+                        
+                    <div class="row g-3">
+
+                        <div class="col-md-4">
+                            <label asp-for="Input.Respostas[i].Resposta"
+                                   class="form-label">
+                                Resposta
+                            </label>
+
+                            <select asp-for="Input.Respostas[i].Resposta"
+                                    class="form-select resposta-checklist"
+                                    disabled="@(!Model.PodeEditar)">
+
+                                <option value="">
+                                    Selecione uma resposta
+                                </option>
+
+                                @foreach (var opcao in Model.OpcoesResposta)
+                                {
+                                    <option value="@opcao">
+                                        @opcao
+                                    </option>
+                                }
+                            </select>
+
+                            <span asp-validation-for="Input.Respostas[i].Resposta"
+                                  class="text-danger small">
+                            </span>
+                        </div>
+
+                        <div class="col-md-8">
+                            <label asp-for="Input.Respostas[i].Observacao"
+                                   class="form-label">
+                                Observação
+                            </label>
+
+                            <textarea asp-for="Input.Respostas[i].Observacao"
+                                      class="form-control"
+                                      rows="2"
+                                      disabled="@(!Model.PodeEditar)"
+                                      placeholder="Obrigatória para itens PENDENTE"></textarea>
+
+                            <span asp-validation-for="Input.Respostas[i].Observacao"
+                                  class="text-danger small">
+                            </span>
+                        </div>
+
+                    </div>
+
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <div class="d-flex justify-content-between
+                align-items-center flex-wrap gap-2 mb-4">
 
         <a asp-page="/Inspecoes/Index"
            class="btn btn-outline-secondary">
-            Voltar
+            Voltar ao histórico
         </a>
 
         @if (Model.PodeEditar)
         {
-            <div class="d-flex gap-2">
+            <div class="d-flex flex-wrap gap-2">
 
                 <button type="submit"
                         asp-page-handler="Salvar"
@@ -122,10 +232,10 @@
                     Salvar rascunho
                 </button>
 
-                <button type="submit"
-                        asp-page-handler="Concluir"
-                        class="btn btn-success"
-                        onclick="return confirm('Deseja concluir esta inspeção?');">
+                <button type="button"
+                    class="btn btn-success"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalConcluir">
                     Concluir inspeção
                 </button>
 
@@ -133,8 +243,120 @@
         }
 
     </div>
+
 </form>
+
+@if (Model.PodeEditar)
+{
+    <div class="modal fade"
+         id="modalConcluir"
+         tabindex="-1"
+         aria-labelledby="tituloModalConcluir"
+         aria-hidden="true">
+
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title"
+                        id="tituloModalConcluir">
+                        PassoCerto
+                    </h5>
+
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Fechar">
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <h6>Concluir inspeção?</h6>
+
+                    <p class="text-muted mb-0">
+                        Após a conclusão, a inspeção
+                        não poderá mais ser editada.
+                        Deseja continuar?
+                    </p>
+                </div>
+
+                <div class="modal-footer">
+
+                    <button type="button"
+                            class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">
+                        Cancelar
+                    </button>
+
+                    <button type="submit"
+                            form="formInspecao"
+                            asp-page-handler="Concluir"
+                            class="btn btn-success">
+                        Sim, concluir
+                    </button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const selects = document.querySelectorAll(
+                ".resposta-checklist"
+            );
+
+            const texto = document.getElementById(
+                "textoProgresso"
+            );
+
+            const barra = document.getElementById(
+                "barraProgresso"
+            );
+
+            const percentualTexto = document.getElementById(
+                "percentualProgresso"
+            );
+
+            function atualizarProgresso() {
+
+                const total = selects.length;
+
+                const respondidos = Array.from(selects)
+                    .filter(select => select.value !== "")
+                    .length;
+
+                const percentual = total === 0
+                    ? 0
+                    : Math.round(respondidos / total * 100);
+
+                texto.textContent =
+                    `${respondidos} de ${total} itens`;
+
+                barra.style.width = `${percentual}%`;
+
+                barra.setAttribute(
+                    "aria-valuenow",
+                    percentual
+                );
+
+                percentualTexto.textContent =
+                    `${percentual}% preenchido`;
+            }
+
+            selects.forEach(select => {
+                select.addEventListener(
+                    "change",
+                    atualizarProgresso
+                );
+            });
+
+            atualizarProgresso();
+        });
+    </script>
 }
