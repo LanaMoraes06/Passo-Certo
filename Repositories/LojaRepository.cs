@@ -9,7 +9,6 @@ public class LojaRepository(NpgsqlDataSource dataSource) : ILojaRepository
 {
     private readonly NpgsqlDataSource _dataSource = dataSource;
 
-    // SELECT - Listar lojas
     public async Task<List<Loja>> ListarAsync()
     {
         var lojas = new List<Loja>();
@@ -66,7 +65,6 @@ public class LojaRepository(NpgsqlDataSource dataSource) : ILojaRepository
         return Mapear(reader);
     }
 
-    // SELECT - Buscar ativos
     public async Task<List<Loja>> ListarPorRegiaoAsync(long regiaoId)
    {
        var lojas = new List<Loja>();
@@ -127,7 +125,6 @@ public class LojaRepository(NpgsqlDataSource dataSource) : ILojaRepository
     }
 
 
-    // UPDATE - Atualizar dados da loja
     public async Task<bool> AtualizarAsync(Loja loja)
     {
         const string sql = """
@@ -161,7 +158,6 @@ public class LojaRepository(NpgsqlDataSource dataSource) : ILojaRepository
         return linhasAfetadas > 0;
     }
 
-    // UPDATE - Desativação lógica
     public async Task<bool> DesativarAsync(long id)
     {
         const string sql = """
@@ -187,7 +183,6 @@ public class LojaRepository(NpgsqlDataSource dataSource) : ILojaRepository
         return linhasAfetadas > 0;
     }
 
-    // Mapeamento: PostgreSQL -> Loja
     private static Loja Mapear(NpgsqlDataReader reader)
     {
         return new Loja
@@ -273,5 +268,53 @@ public async Task<List<Loja>> ListarPermitidasAsync(
     }
 
     return lojas;
+}
+
+public async Task<Loja?> BuscarParaInspecaoAsync(
+    long lojaId,
+    long usuarioId)
+{
+    const string sql = """
+        SELECT
+            l.id,
+            l.codigo,
+            l.nome,
+            l.gerente_nome,
+            l.regiao_id,
+            l.ativo,
+            l.criado_em,
+            l.atualizado_em
+        FROM lojas l
+        INNER JOIN usuarios u
+            ON u.id = @UsuarioId
+        WHERE l.id = @LojaId
+          AND l.ativo = TRUE
+          AND u.ativo = TRUE
+          AND u.perfil = 'SUPERVISOR'
+          AND EXISTS (
+              SELECT 1
+              FROM usuarios_regioes ur
+              WHERE ur.usuario_id = u.id
+                AND ur.regiao_id = l.regiao_id
+          )
+        LIMIT 1
+        """;
+
+    await using var connection =
+        await _dataSource.OpenConnectionAsync();
+
+    await using var command =
+        new NpgsqlCommand(sql, connection);
+
+    command.Parameters.AddWithValue("LojaId", lojaId);
+    command.Parameters.AddWithValue("UsuarioId", usuarioId);
+
+    await using var reader =
+        await command.ExecuteReaderAsync();
+
+    if (!await reader.ReadAsync())
+        return null;
+
+    return Mapear(reader);
 }
 }
