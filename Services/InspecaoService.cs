@@ -86,7 +86,6 @@ public class InspecaoService(
             inspecaoId, usuarioId);
     }
 
-    // 6. ATUALIZAR DADOS GERAIS DO RASCUNHO
     public async Task AtualizarAsync(
         long inspecaoId,
         EditarInspecaoInput input,
@@ -212,8 +211,7 @@ public class InspecaoService(
             throw new BusinessException(
                 string.Join(Environment.NewLine, erros));
 
-        // O Repository deve repetir a validação sob lock,
-        // calcular o percentual e concluir atomicamente.
+      
         bool concluida = await inspecaoRepository
             .ConcluirAsync(inspecaoId, usuarioId);
 
@@ -222,7 +220,6 @@ public class InspecaoService(
                 "Não foi possível concluir a inspeção.");
     }
 
-    // MÉTODOS AUXILIARES
 
     private static void ValidarUsuario(long usuarioId)
     {
@@ -271,6 +268,39 @@ public class InspecaoService(
             throw new BusinessException(
                 "A data da visita não pode ser futura.");
     }
+    public async Task<(List<InspecaoResumoDto> Itens, long Total)>
+    BuscarHistoricoAsync(FiltroHistorico filtro, long usuarioId)
+{
+    ArgumentNullException.ThrowIfNull(filtro);
+    ValidarUsuario(usuarioId);
+
+    if (filtro.DataInicio.HasValue &&
+        filtro.DataFim.HasValue &&
+        filtro.DataInicio > filtro.DataFim)
+    {
+        throw new BusinessException(
+            "A data inicial não pode ser maior que a data final.");
+    }
+
+    if (filtro.LojaId is <= 0 || filtro.RegiaoId is <= 0)
+    {
+        throw new BusinessException(
+            "Loja ou região inválida.");
+    }
+
+    if (filtro.Status.HasValue &&
+        !Enum.IsDefined(filtro.Status.Value))
+    {
+        throw new BusinessException(
+            "Status inválido.");
+    }
+
+    filtro.Pagina = Math.Max(1, filtro.Pagina);
+    filtro.TamanhoPagina = 10;
+
+    return await inspecaoRepository
+        .BuscarHistoricoAsync(filtro, usuarioId);
+}
 
     private static void ValidarRascunhoDoAutor(
         Inspecao inspecao,
@@ -288,4 +318,6 @@ public class InspecaoService(
                 "Uma inspeção concluída não pode ser alterada.");
         }
     }
+
+    
 }

@@ -1,5 +1,7 @@
-namespace PassoCerto.Web.Repositories.Interfaces;
+using PassoCerto.Web.Models.DTOs.Inspecoes;
 using PassoCerto.Web.Models.Entity;
+
+namespace PassoCerto.Web.Repositories.Interfaces;
 
 public interface IInspecaoRepository
 {
@@ -20,6 +22,9 @@ public interface IInspecaoRepository
 
     Task<bool> ConcluirAsync(
         long inspecaoId, long usuarioId);
+
+    Task<(List<InspecaoResumoDto> Itens, long Total)>
+    BuscarHistoricoAsync(FiltroHistorico filtro, long usuarioId);
 
     Task<List<Inspecao>> ListarPorLojaAsync(long lojaId, long usuarioId);
     

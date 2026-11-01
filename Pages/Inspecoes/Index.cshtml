@@ -1,17 +1,16 @@
 @page
 @model PassoCerto.Web.Pages.Inspecoes.IndexModel
+@using PassoCerto.Web.Models.Enum
 
 @{
-    ViewData["Title"] = "Inspeções";
+    ViewData["Title"] = "Histórico de inspeções";
 }
 
-<div class="d-flex justify-content-between
-            align-items-center mb-4">
-
+<div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h1 class="h3">Inspeções</h1>
-        <p class="text-muted">
-            Acompanhe as visitas registradas.
+        <h1 class="h3 mb-1">Histórico de inspeções</h1>
+        <p class="text-muted mb-0">
+            Consulte e acompanhe as visitas registradas.
         </p>
     </div>
 
@@ -31,64 +30,191 @@
     </div>
 }
 
-<div class="card shadow-sm">
+<div class="card shadow-sm mb-4">
     <div class="card-body">
+        <form method="get">
 
-        @if (!Model.Inspecoes.Any())
-        {
-            <div class="alert alert-info mb-0">
-                Nenhuma inspeção encontrada.
-            </div>
-        }
-        else
-        {
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Loja</th>
-                            <th>Data</th>
-                            <th>Status</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
+            <div class="row g-3 align-items-end">
 
-                    <tbody>
-                        @foreach (var inspecao in Model.Inspecoes)
+                <div class="col-md-3">
+                    <label class="form-label">Data inicial</label>
+                    <input asp-for="Filtro.DataInicio"
+                           type="date"
+                           class="form-control" />
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Data final</label>
+                    <input asp-for="Filtro.DataFim"
+                           type="date"
+                           class="form-control" />
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Loja</label>
+                    <select asp-for="Filtro.LojaId"
+                            class="form-select">
+
+                        <option value="">Todas as lojas</option>
+
+                        @foreach (var loja in Model.Lojas)
                         {
-                            <tr>
-                                <td>#@inspecao.Id</td>
-                                <td>@inspecao.LojaId</td>
-                                <td>
-                                    @inspecao.DataVisita.ToString("dd/MM/yyyy")
-                                </td>
-                                <td>
-                                    @if (inspecao.Status.ToString() == "CONCLUIDA")
-                                    {
-                                        <span class="badge bg-success">
-                                            Concluída
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-warning text-dark">
-                                            Rascunho
-                                        </span>
-                                    }
-                                </td>
-                                <td>
-                                    <a asp-page="/Inspecoes/Detalhes"
-                                       asp-route-id="@inspecao.Id"
-                                       class="btn btn-sm btn-outline-primary">
-                                        Abrir
-                                    </a>
-                                </td>
-                            </tr>
+                            <option value="@loja.Id">
+                                @loja.Nome
+                            </option>
                         }
-                    </tbody>
-                </table>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select asp-for="Filtro.Status"
+                            class="form-select">
+
+                        <option value="">Todos</option>
+                        <option value="RASCUNHO">Rascunho</option>
+                        <option value="CONCLUIDA">Concluída</option>
+
+                    </select>
+                </div>
+
             </div>
-        }
+
+            <div class="d-flex justify-content-end gap-2 mt-3">
+
+                <a asp-page="/Inspecoes/Index"
+                   class="btn btn-outline-secondary">
+                    Limpar
+                </a>
+
+                <button type="submit"
+                        class="btn btn-primary">
+                    Filtrar
+                </button>
+
+            </div>
+        </form>
     </div>
 </div>
+
+@if (Model.Erro is not null)
+{
+    <div class="alert alert-danger">
+        @Model.Erro
+    </div>
+}
+else
+{
+    <div class="card shadow-sm">
+        <div class="card-body">
+
+            <div class="d-flex justify-content-between mb-3">
+                <h2 class="h5 mb-0">Resultados</h2>
+                <span class="text-muted">
+                    @Model.TotalRegistros registro(s)
+                </span>
+            </div>
+
+            @if (!Model.Inspecoes.Any())
+            {
+                <div class="alert alert-info mb-0">
+                    Nenhuma inspeção encontrada.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Loja</th>
+                                <th>Região</th>
+                                <th>Data</th>
+                                <th>Status</th>
+                                <th>Percentual</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var inspecao in Model.Inspecoes)
+                            {
+                                <tr>
+                                    <td>#@inspecao.Id</td>
+
+                                    <td>@inspecao.LojaNome</td>
+
+                                    <td>@inspecao.RegiaoNome</td>
+
+                                    <td>
+                                        @inspecao.DataVisita.ToString("dd/MM/yyyy")
+                                    </td>
+
+                                    <td>
+                                        @if (inspecao.Status == StatusInspecao.CONCLUIDA)
+                                        {
+                                            <span class="badge bg-success">
+                                                Concluída
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">
+                                                Rascunho
+                                            </span>
+                                        }
+                                    </td>
+
+                                    <td>
+                                        @if (inspecao.PercentualRealizacao.HasValue)
+                                        {
+                                            @inspecao.PercentualRealizacao.Value.ToString("N1")<text>%</text>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+
+                                    <td>
+                                        <a asp-page="/Inspecoes/Detalhes"
+                                           asp-route-id="@inspecao.Id"
+                                           class="btn btn-sm btn-outline-primary">
+                                            Abrir
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (Model.TotalPaginas > 1)
+    {
+        <nav aria-label="Paginação do histórico" class="mt-4">
+            <ul class="pagination justify-content-center">
+
+                @for (int pagina = 1; pagina <= Model.TotalPaginas; pagina++)
+                {
+                    <li class="page-item @(pagina == Model.Filtro.Pagina ? "active" : "")">
+                        <a class="page-link"
+                           asp-page="/Inspecoes/Index"
+                           asp-route-Filtro.Pagina="@pagina"
+                           asp-route-Filtro.DataInicio="@Model.Filtro.DataInicio"
+                           asp-route-Filtro.DataFim="@Model.Filtro.DataFim"
+                           asp-route-Filtro.LojaId="@Model.Filtro.LojaId"
+                           asp-route-Filtro.RegiaoId="@Model.Filtro.RegiaoId"
+                           asp-route-Filtro.Status="@Model.Filtro.Status">
+                            @pagina
+                        </a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+}

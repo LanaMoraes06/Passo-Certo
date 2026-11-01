@@ -3,6 +3,7 @@ using NpgsqlTypes;
 using PassoCerto.Web.Models.Entity;
 using PassoCerto.Web.Models.Enum;
 using PassoCerto.Web.Repositories.Interfaces;
+using PassoCerto.Web.Models.DTOs.Inspecoes;
 
 namespace PassoCerto.Web.Repositories;
 
@@ -70,7 +71,6 @@ public class InspecaoRepository(NpgsqlDataSource dataSource)
         return inspecoes;
     }
 
-    // SELECT - Buscar por ID respeitando abrangência
     public async Task<Inspecao?> BuscarPorIdAsync(
         long id, long usuarioId)
     {
@@ -98,7 +98,6 @@ public class InspecaoRepository(NpgsqlDataSource dataSource)
             : null;
     }
 
-    // SELECT - Histórico por loja
     public async Task<List<Inspecao>> ListarPorLojaAsync(
         long lojaId, long usuarioId)
     {
@@ -165,7 +164,6 @@ public class InspecaoRepository(NpgsqlDataSource dataSource)
         return respostas;
     }
 
-    // INSERT - Criar inspeção e snapshots do checklist
     public async Task<long> CriarAsync(Inspecao inspecao)
     {
         await using var connection =
@@ -242,9 +240,7 @@ public class InspecaoRepository(NpgsqlDataSource dataSource)
             inspecaoId = Convert.ToInt64(resultado);
         }
 
-        // Cria as respostas a partir dos itens ativos.
-        // Os nomes, descrições e ordens são copiados
-        // para preservar o histórico (RN07).
+
         const string sqlRespostas = """
             INSERT INTO respostas_inspecao (
                 inspecao_id,
@@ -296,7 +292,6 @@ public class InspecaoRepository(NpgsqlDataSource dataSource)
         return inspecaoId;
     }
 
-    // UPDATE - Editar dados gerais do rascunho
     public async Task<bool> AtualizarAsync(
         Inspecao inspecao, long usuarioId)
     {
@@ -339,7 +334,6 @@ public class InspecaoRepository(NpgsqlDataSource dataSource)
         return await command.ExecuteNonQueryAsync() == 1;
     }
 
-    // UPDATE - Salvar respostas do rascunho
     public async Task<bool> SalvarRascunhoAsync(
         long inspecaoId,
         List<RespostaInspecao> respostas,
@@ -387,7 +381,6 @@ public class InspecaoRepository(NpgsqlDataSource dataSource)
               AND inspecao_id = @InspecaoId
             """;
 
-        // Impede respostas duplicadas na mesma requisição.
         if (respostas.Select(r => r.Id).Distinct().Count()
             != respostas.Count)
         {
@@ -462,7 +455,6 @@ public class InspecaoRepository(NpgsqlDataSource dataSource)
         await using var transaction =
             await connection.BeginTransactionAsync();
 
-        // Bloqueia a inspeção e verifica autoria.
         const string sqlVerificar = """
             SELECT i.id
             FROM inspecoes i
@@ -488,7 +480,6 @@ public class InspecaoRepository(NpgsqlDataSource dataSource)
                 return false;
         }
 
-        // Conta respostas e verifica preenchimento.
         const string sqlCalculo = """
             SELECT
                 COUNT(*) AS total,
@@ -618,7 +609,125 @@ public class InspecaoRepository(NpgsqlDataSource dataSource)
         };
     }
 
-    // MAPEAMENTO - RespostaInspecao
+
+public async Task<(List<InspecaoResumoDto> Itens, long Total)>
+    BuscarHistoricoAsync(FiltroHistorico filtro, long usuarioId)
+{
+    var itens = new List<InspecaoResumoDto>();
+
+    string where = $"""
+        WHERE {FiltroAcesso}
+          AND (@DataInicio IS NULL OR i.data_visita >= @DataInicio)
+          AND (@DataFim IS NULL OR i.data_visita <= @DataFim)
+          AND (@LojaId IS NULL OR i.loja_id = @LojaId)
+          AND (@RegiaoId IS NULL OR i.regiao_id = @RegiaoId)
+          AND (@Status IS NULL OR i.status = @Status)
+        """;
+
+    string sqlTotal = $"""
+        SELECT COUNT(*)
+        FROM inspecoes i
+        {where}
+        """;
+
+    string sqlItens = $"""
+        SELECT
+            i.id,
+            l.nome AS loja_nome,
+            rg.nome AS regiao_nome,
+            i.data_visita,
+            i.status,
+            i.percentual_realizacao
+        FROM inspecoes i
+        INNER JOIN lojas l ON l.id = i.loja_id
+        INNER JOIN regioes rg ON rg.id = i.regiao_id
+        {where}
+        ORDER BY i.data_visita DESC, i.id DESC
+        LIMIT @Limite OFFSET @Deslocamento
+        """;
+
+    await using var connection =
+        await _dataSource.OpenConnectionAsync();
+
+    void AdicionarFiltros(NpgsqlCommand command)
+    {
+        command.Parameters.AddWithValue("UsuarioId", usuarioId);
+
+        command.Parameters.Add("DataInicio", NpgsqlDbType.Date).Value =
+            (object?)filtro.DataInicio ?? DBNull.Value;
+
+        command.Parameters.Add("DataFim", NpgsqlDbType.Date).Value =
+            (object?)filtro.DataFim ?? DBNull.Value;
+
+        command.Parameters.Add("LojaId", NpgsqlDbType.Bigint).Value =
+            (object?)filtro.LojaId ?? DBNull.Value;
+
+        command.Parameters.Add("RegiaoId", NpgsqlDbType.Bigint).Value =
+            (object?)filtro.RegiaoId ?? DBNull.Value;
+
+        command.Parameters.Add("Status", NpgsqlDbType.Varchar).Value =
+            filtro.Status.HasValue
+                ? filtro.Status.Value.ToString()
+                : DBNull.Value;
+    }
+
+    long total;
+
+    await using (var command = new NpgsqlCommand(sqlTotal, connection))
+    {
+        AdicionarFiltros(command);
+
+        total = Convert.ToInt64(
+            await command.ExecuteScalarAsync());
+    }
+
+    await using (var command = new NpgsqlCommand(sqlItens, connection))
+    {
+        AdicionarFiltros(command);
+
+        command.Parameters.AddWithValue(
+            "Limite", filtro.TamanhoPagina);
+
+        command.Parameters.AddWithValue(
+            "Deslocamento",
+            (filtro.Pagina - 1) * filtro.TamanhoPagina);
+
+        await using var reader = await command.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
+        {
+            itens.Add(new InspecaoResumoDto
+            {
+                Id = reader.GetInt64(
+                    reader.GetOrdinal("id")),
+
+                LojaNome = reader.GetString(
+                    reader.GetOrdinal("loja_nome")),
+
+                RegiaoNome = reader.GetString(
+                    reader.GetOrdinal("regiao_nome")),
+
+                DataVisita = reader.GetFieldValue<DateOnly>(
+                    reader.GetOrdinal("data_visita")),
+
+                Status = Enum.Parse<StatusInspecao>(
+                    reader.GetString(reader.GetOrdinal("status")),
+                    ignoreCase: true),
+
+                PercentualRealizacao =
+                    reader.IsDBNull(
+                        reader.GetOrdinal("percentual_realizacao"))
+                    ? null
+                    : reader.GetDecimal(
+                        reader.GetOrdinal("percentual_realizacao"))
+            });
+        }
+    }
+
+    return (itens, total);
+}
+
+
     private static RespostaInspecao MapearResposta(
         NpgsqlDataReader reader)
     {
