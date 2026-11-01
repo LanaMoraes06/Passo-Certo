@@ -1,0 +1,242 @@
+@page
+@model PassoCerto.Web.Pages.Dashboard.IndexModel
+
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="mb-4">
+    <h1 class="h3">Dashboard</h1>
+    <p class="text-muted">
+        Acompanhe o desempenho das inspeções.
+    </p>
+</div>
+
+@if (Model.Erro is not null)
+{
+    <div class="alert alert-danger">
+        @Model.Erro
+    </div>
+}
+else
+{
+    <form method="get" class="card card-body mb-4">
+        <div class="row g-3 align-items-end">
+
+            <div class="col-md-4">
+                <label class="form-label">
+                    Data inicial
+                </label>
+                <input asp-for="Filtro.DataInicio"
+                       asp-format="{0:yyyy-MM-dd}"
+                       type="date"
+                       class="form-control" />
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">
+                    Data final
+                </label>
+                <input asp-for="Filtro.DataFim"
+                       asp-format="{0:yyyy-MM-dd}"
+                       type="date"
+                       class="form-control" />
+            </div>
+
+            <div class="col-md-4">
+                <button type="submit"
+                        class="btn btn-primary">
+                    Filtrar
+                </button>
+
+                <a asp-page="/Dashboard/Index"
+                   class="btn btn-outline-secondary">
+                    Limpar
+                </a>
+            </div>
+
+        </div>
+    </form>
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1">
+                        Total de inspeções
+                    </p>
+                    <h2>@Model.Resumo.TotalInspecoes</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1">
+                        Concluídas
+                    </p>
+                    <h2>@Model.Resumo.Concluidas</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1">
+                        Rascunhos
+                    </p>
+                    <h2>@Model.Resumo.Rascunhos</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1">
+                        Percentual médio
+                    </p>
+                    <h2>
+                        @(Model.Resumo.PercentualMedio?.ToString("N1") ?? "—")%
+                    </h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted">Lojas ativas</p>
+                    <h3>@Model.Resumo.TotalLojasAtivas</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted">Lojas inspecionadas</p>
+                    <h3>@Model.Resumo.LojasInspecionadas</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted">Itens pendentes</p>
+                    <h3>@Model.Resumo.QuantidadePendentes</h3>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            <strong>Desempenho por região</strong>
+        </div>
+
+        <div class="card-body table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Região</th>
+                        <th>Lojas</th>
+                        <th>Inspecionadas</th>
+                        <th>Inspeções</th>
+                        <th>Média</th>
+                        <th>Pendências</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var regiao in Model.Regioes)
+                    {
+                        <tr>
+                            <td>@regiao.Nome</td>
+                            <td>@regiao.TotalLojas</td>
+                            <td>@regiao.LojasInspecionadas</td>
+                            <td>@regiao.TotalInspecoes</td>
+                            <td>
+                                @(regiao.PercentualMedio?.ToString("N1") ?? "—")%
+                            </td>
+                            <td>@regiao.Pendencias</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="row g-3">
+
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header">
+                    <strong>Top 5 pendências</strong>
+                </div>
+
+                <div class="card-body table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Ocorrências</th>
+                                <th>Lojas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.TopPendencias.Take(5))
+                            {
+                                <tr>
+                                    <td>@item.Titulo</td>
+                                    <td>@item.QuantidadePendencias</td>
+                                    <td>@item.LojasAfetadas</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header">
+                    <strong>Lojas não inspecionadas no período</strong>
+                </div>
+
+                <div class="card-body table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Loja</th>
+                                <th>Região</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var loja in Model.LojasNaoInspecionadas)
+                            {
+                                <tr>
+                                    <td>@loja.Codigo</td>
+                                    <td>@loja.Nome</td>
+                                    <td>@loja.Regiao</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+}
