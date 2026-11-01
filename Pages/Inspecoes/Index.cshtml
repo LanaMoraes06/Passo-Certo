@@ -1,0 +1,94 @@
+@page
+@model PassoCerto.Web.Pages.Inspecoes.IndexModel
+
+@{
+    ViewData["Title"] = "Inspeções";
+}
+
+<div class="d-flex justify-content-between
+            align-items-center mb-4">
+
+    <div>
+        <h1 class="h3">Inspeções</h1>
+        <p class="text-muted">
+            Acompanhe as visitas registradas.
+        </p>
+    </div>
+
+    @if (User.IsInRole("SUPERVISOR"))
+    {
+        <a asp-page="/Inspecoes/Criar"
+           class="btn btn-primary">
+            Nova inspeção
+        </a>
+    }
+</div>
+
+@if (TempData["Sucesso"] is string mensagem)
+{
+    <div class="alert alert-success">
+        @mensagem
+    </div>
+}
+
+<div class="card shadow-sm">
+    <div class="card-body">
+
+        @if (!Model.Inspecoes.Any())
+        {
+            <div class="alert alert-info mb-0">
+                Nenhuma inspeção encontrada.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Loja</th>
+                            <th>Data</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var inspecao in Model.Inspecoes)
+                        {
+                            <tr>
+                                <td>#@inspecao.Id</td>
+                                <td>@inspecao.LojaId</td>
+                                <td>
+                                    @inspecao.DataVisita.ToString("dd/MM/yyyy")
+                                </td>
+                                <td>
+                                    @if (inspecao.Status.ToString() == "CONCLUIDA")
+                                    {
+                                        <span class="badge bg-success">
+                                            Concluída
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning text-dark">
+                                            Rascunho
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    <a asp-page="/Inspecoes/Detalhes"
+                                       asp-route-id="@inspecao.Id"
+                                       class="btn btn-sm btn-outline-primary">
+                                        Abrir
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
