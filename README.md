@@ -582,5 +582,3 @@ git status
 - PostgreSQL: https://www.postgresql.org/download/
 
 ---
-
-**Nota de segurança:** o repositório deve manter fora do controle de versão as senhas reais e os arquivos de segredo local. O README apresenta marcadores para que cada avaliador utilize sua própria configuração. Não utilize credenciais de demonstração em produção.
