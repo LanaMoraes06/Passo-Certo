@@ -154,7 +154,6 @@ public class UsuarioRepository(NpgsqlDataSource dataSource) : IUsuarioRepository
             SET
                 login = @Login,
                 perfil = @Perfil,
-                ativo = @Ativo,
                 atualizado_em = NOW()
             WHERE id = @Id
             """;
@@ -169,7 +168,6 @@ public class UsuarioRepository(NpgsqlDataSource dataSource) : IUsuarioRepository
         command.Parameters.AddWithValue("Login", usuario.Login);
         command.Parameters.AddWithValue(
             "Perfil", usuario.Perfil.ToString());
-        command.Parameters.AddWithValue("Ativo", usuario.Ativo);
 
         int linhasAfetadas =
             await command.ExecuteNonQueryAsync();
@@ -204,7 +202,6 @@ public class UsuarioRepository(NpgsqlDataSource dataSource) : IUsuarioRepository
         return linhasAfetadas > 0;
     }
 
-    // UPDATE - Desativação lógica
     public async Task<bool> DesativarAsync(long id)
     {
         const string sql = """
@@ -256,11 +253,56 @@ public class UsuarioRepository(NpgsqlDataSource dataSource) : IUsuarioRepository
 
             AtualizadoEm = reader.GetDateTime(
                 reader.GetOrdinal("atualizado_em"))
-        };
+            };
+        }
+
+       public async Task<bool> ExisteLoginAsync(
+        string login,
+        long? ignorarId = null)
+    {
+        const string sql = """
+            SELECT EXISTS (
+                SELECT 1
+                FROM usuarios
+                WHERE LOWER(TRIM(login)) = LOWER(TRIM(@Login))
+                  AND (@IgnorarId IS NULL OR id <> @IgnorarId)
+            )
+            """;
+
+        await using var connection =
+            await _dataSource.OpenConnectionAsync();
+
+        await using var command =
+            new NpgsqlCommand(sql, connection);
+
+        command.Parameters.AddWithValue("Login", login);
+
+        command.Parameters.Add(
+            "IgnorarId",
+            NpgsqlTypes.NpgsqlDbType.Bigint
+        ).Value = (object?)ignorarId ?? DBNull.Value;
+
+        return (bool)(await command.ExecuteScalarAsync() ?? false);
     }
 
-    Task<List<Usuario>> IUsuarioRepository.ListarRegioesPorUsuarioAsync(long usuarioId)
+    public async Task<bool> ReativarAsync(long id)
     {
-        throw new NotImplementedException();
+        const string sql = """
+            UPDATE usuarios
+            SET ativo = TRUE,
+                atualizado_em = NOW()
+            WHERE id = @Id
+              AND ativo = FALSE
+            """;
+
+        await using var connection =
+            await _dataSource.OpenConnectionAsync();
+
+        await using var command =
+            new NpgsqlCommand(sql, connection);
+
+        command.Parameters.AddWithValue("Id", id);
+
+        return await command.ExecuteNonQueryAsync() > 0;
     }
-}
+    }

@@ -1,0 +1,129 @@
+@page
+@model PassoCerto.Web.Pages.Admin.Usuarios.IndexModel
+
+@{
+    ViewData["Title"] = "Gerenciar usuários";
+}
+
+<div class="container py-4">
+
+    <div class="d-flex justify-content-between
+                align-items-center flex-wrap gap-3 mb-4">
+
+        <div>
+            <h1 class="h3 fw-bold">Usuários</h1>
+            <p class="text-muted mb-0">
+                Gerencie os acessos ao PassoCerto.
+            </p>
+        </div>
+
+        <a asp-page="Criar" class="btn btn-primary">
+            + Novo usuário
+        </a>
+    </div>
+
+    @if (TempData["Sucesso"] is string sucesso)
+    {
+        <div class="alert alert-success">@sucesso</div>
+    }
+
+    @if (TempData["Erro"] is string erro)
+    {
+        <div class="alert alert-danger">@erro</div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+
+            @if (!Model.Usuarios.Any())
+            {
+                <p class="text-muted mb-0">
+                    Nenhum usuário cadastrado.
+                </p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Login</th>
+                                <th>Perfil</th>
+                                <th>Situação</th>
+                                <th class="text-end">Ações</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var usuario in Model.Usuarios)
+                            {
+                                <tr>
+                                    <td>@usuario.Id</td>
+                                    <td>@usuario.Login</td>
+                                    <td>@usuario.Perfil</td>
+
+                                    <td>
+                                        @if (usuario.Ativo)
+                                        {
+                                            <span class="badge bg-success">
+                                                Ativo
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">
+                                                Inativo
+                                            </span>
+                                        }
+                                    </td>
+
+                                    <td>
+                                        <div class="d-flex gap-2
+                                                    justify-content-end">
+
+                                            <a asp-page="Editar"
+                                               asp-route-id="@usuario.Id"
+                                               class="btn btn-sm btn-outline-primary">
+                                                Editar
+                                            </a>
+
+                                            @if (usuario.Ativo)
+                                            {
+                                                <form method="post"
+                                                      asp-page-handler="Desativar"
+                                                      asp-route-id="@usuario.Id">
+
+                                                    <button type="submit"
+                                                            class="btn btn-sm btn-outline-danger"
+                                                            onclick="return confirm('Desativar este usuário?')">
+                                                        Desativar
+                                                    </button>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <form method="post"
+                                                      asp-page-handler="Reativar"
+                                                      asp-route-id="@usuario.Id">
+
+                                                    <button type="submit"
+                                                            class="btn btn-sm btn-outline-success">
+                                                        Reativar
+                                                    </button>
+                                                </form>
+                                            }
+
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+        </div>
+    </div>
+</div>

@@ -1,0 +1,140 @@
+@page "{id:long}"
+@using PassoCerto.Web.Models.Enum
+@model PassoCerto.Web.Pages.Admin.Usuarios.EditarModel
+
+@{
+    ViewData["Title"] = "Editar usuário";
+}
+
+<div class="container py-4">
+
+    <h1 class="h3 fw-bold">Editar usuário</h1>
+
+    <p class="text-muted">
+        Atualize os dados e as credenciais de acesso.
+    </p>
+
+    @if (TempData["Sucesso"] is string sucesso)
+    {
+        <div class="alert alert-success">@sucesso</div>
+    }
+
+    @if (TempData["Erro"] is string erro)
+    {
+        <div class="alert alert-danger">@erro</div>
+    }
+
+    <div class="card shadow-sm mb-4">
+
+        <div class="card-header bg-white">
+            <h2 class="h5 mb-0">Dados do usuário</h2>
+        </div>
+
+        <div class="card-body">
+
+            <form method="post">
+
+                <div asp-validation-summary="ModelOnly"
+                     class="text-danger mb-3"></div>
+
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label asp-for="Input.Login"
+                               class="form-label"></label>
+
+                        <input asp-for="Input.Login"
+                               class="form-control" />
+
+                        <span asp-validation-for="Input.Login"
+                              class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="Input.Perfil"
+                               class="form-label"></label>
+
+                        <select asp-for="Input.Perfil"
+                                class="form-select">
+                            <option value="">
+                                Selecione um perfil
+                            </option>
+
+                            @foreach (var perfil in Enum.GetValues<PerfilUsuario>())
+                            {
+                                <option value="@perfil">
+                                    @perfil
+                                </option>
+                            }
+                        </select>
+
+                        <span asp-validation-for="Input.Perfil"
+                              class="text-danger small"></span>
+                    </div>
+
+                </div>
+
+                <div class="d-flex gap-2 mt-4">
+
+                    <button type="submit" class="btn btn-primary">
+                        Salvar alterações
+                    </button>
+
+                    <a asp-page="Index"
+                       class="btn btn-outline-secondary">
+                        Voltar
+                    </a>
+
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+
+        <div class="card-header bg-white">
+            <h2 class="h5 mb-0">Redefinir senha</h2>
+        </div>
+
+        <div class="card-body">
+
+            <p class="text-muted small">
+                A senha atual não será exibida.
+                Informe uma nova senha para substituí-la.
+            </p>
+
+            <form method="post"
+                  asp-page-handler="RedefinirSenha">
+
+                <div class="mb-3">
+
+                    <label asp-for="NovaSenha"
+                           class="form-label">
+                        Nova senha
+                    </label>
+
+                    <input asp-for="NovaSenha"
+                           type="password"
+                           autocomplete="new-password"
+                           class="form-control"
+                           minlength="8" />
+
+                </div>
+
+                <button type="submit"
+                        class="btn btn-outline-warning"
+                        onclick="return confirm('Deseja redefinir a senha deste usuário?')">
+                    Redefinir senha
+                </button>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
