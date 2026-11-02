@@ -221,6 +221,13 @@
            class="btn btn-outline-secondary">
             Voltar ao histórico
         </a>
+        <a asp-page="/Inspecoes/Imprimir"
+            asp-route-id="@Model.Inspecao.Id"
+            target="_blank"
+            rel="noopener"
+            class="btn btn-outline-primary">
+        Imprimir inspeção
+        </a>
 
         @if (Model.PodeEditar)
         {

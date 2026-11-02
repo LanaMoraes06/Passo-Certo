@@ -1,0 +1,249 @@
+@page "{id:long}"
+@model PassoCerto.Web.Pages.Inspecoes.ImprimirModel
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Relatório de inspeção";
+
+    var categorias = Model.Itens
+        .GroupBy(item => new
+        {
+            item.CategoriaOrdem,
+            item.CategoriaNome
+        })
+        .OrderBy(grupo => grupo.Key.CategoriaOrdem)
+        .ToList();
+}
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
+
+    <title>
+        Inspeção #@Model.Inspecao.Id | PassoCerto
+    </title>
+
+    <link rel="stylesheet"
+          href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+
+    <style>
+        body {
+            background: #f1f5f9;
+            color: #243247;
+            font-family: Arial, sans-serif;
+        }
+
+        .relatorio {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 40px;
+            background: white;
+            box-shadow: 0 4px 20px rgba(0,0,0,.08);
+        }
+
+        .marca {
+            color: #234b83;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .categoria {
+            margin-top: 30px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #234b83;
+            font-size: 18px;
+            color: #234b83;
+        }
+
+        .item {
+            padding: 14px 0;
+            border-bottom: 1px solid #e5e7eb;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        .item-titulo {
+            font-weight: 600;
+        }
+
+        .item-descricao {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .resposta {
+            font-weight: 600;
+        }
+
+        .observacao {
+            margin-top: 6px;
+            font-size: 13px;
+        }
+
+        .rodape {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 35px;
+            text-align: center;
+        }
+
+        @@page {
+            size: A4;
+            margin: 15mm;
+        }
+
+        @@media print {
+            body {
+                background: white;
+            }
+
+            .relatorio {
+                max-width: none;
+                margin: 0;
+                padding: 0;
+                box-shadow: none;
+            }
+
+            .nao-imprimir {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container nao-imprimir py-3 d-flex
+                justify-content-between align-items-center">
+
+        <a asp-page="/Inspecoes/Detalhes"
+           asp-route-id="@Model.Inspecao.Id"
+           class="btn btn-outline-secondary">
+            Voltar
+        </a>
+
+        <button type="button"
+                onclick="window.print()"
+                class="btn btn-primary">
+            Imprimir / Salvar PDF
+        </button>
+    </div>
+
+    <main class="relatorio">
+
+        <header class="mb-4">
+
+            <div class="marca">PassoCerto</div>
+
+            <p class="text-muted mb-2">
+                Relatório de inspeção
+            </p>
+
+            <hr />
+
+            <h1 class="h4">
+                Inspeção #@Model.Inspecao.Id
+            </h1>
+
+            <div class="row mt-3 g-3">
+
+                <div class="col-6">
+                    <strong>Loja:</strong>
+                    @Model.Inspecao.LojaId
+                </div>
+
+                <div class="col-6">
+                    <strong>Data da visita:</strong>
+                    @Model.Inspecao.DataVisita.ToString("dd/MM/yyyy")
+                </div>
+
+                <div class="col-6">
+                    <strong>Status:</strong>
+                    @Model.Inspecao.Status
+                </div>
+
+                <div class="col-6">
+                    <strong>Percentual:</strong>
+
+                    @if (Model.Inspecao.PercentualRealizacao.HasValue)
+                    {
+                        @Model.Inspecao.PercentualRealizacao.Value.ToString("N1")
+                        <text>%</text>
+                    }
+                    else
+                    {
+                        <text>Não calculável</text>
+                    }
+                </div>
+
+            </div>
+
+        </header>
+
+        <section>
+
+            <h2 class="h5">Checklist da visita</h2>
+
+            @foreach (var categoria in categorias)
+            {
+                <section>
+                    <h3 class="categoria">
+                        @categoria.Key.CategoriaNome
+                    </h3>
+
+                    @foreach (var item in categoria
+                        .OrderBy(x => x.ItemOrdem))
+                    {
+                        <div class="item">
+
+                            <div class="d-flex
+                                        justify-content-between
+                                        gap-3">
+
+                                <span class="item-titulo">
+                                    @item.ItemTitulo
+                                </span>
+
+                                <span class="resposta">
+                                    @(item.Resposta?.ToString()
+                                        ?? "Não respondido")
+                                </span>
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(
+                                item.ItemDescricao))
+                            {
+                                <div class="item-descricao">
+                                    @item.ItemDescricao
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(
+                                item.Observacao))
+                            {
+                                <div class="observacao">
+                                    <strong>Observação:</strong>
+                                    @item.Observacao
+                                </div>
+                            }
+
+                        </div>
+                    }
+
+                </section>
+            }
+
+        </section>
+
+        <footer class="rodape">
+            Relatório gerado pelo PassoCerto
+            em @DateTime.Now.ToString("dd/MM/yyyy HH:mm")
+        </footer>
+
+    </main>
+
+</body>
+</html>
