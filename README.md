@@ -121,13 +121,14 @@ pacman -Ss dotnet-sdk
 Se `dotnet-sdk-8.0` estiver disponível:
 
 ```bash
-sudo pacman -S dotnet-sdk-8.0
+sudo pacman -S dotnet-sdk-8.0 aspnet-runtime-8.0
 
 dotnet --info
 dotnet --list-sdks
+dotnet --list-runtimes
 ```
 
-Se a versão 8 não estiver disponível pelo gerenciador de pacotes, siga o método oficial de instalação manual do SDK 8 para Linux: https://learn.microsoft.com/dotnet/core/install/linux. Evite misturar instalações manuais e de pacotes sem revisar `PATH` e `DOTNET_ROOT`.
+Confirme que `dotnet --list-runtimes` inclui `Microsoft.AspNetCore.App 8.0.x` (além do runtime .NET). Se a versão 8 não estiver disponível pelo gerenciador de pacotes, siga o método oficial de instalação manual do SDK 8 para Linux: https://learn.microsoft.com/dotnet/core/install/linux. Evite misturar instalações manuais e de pacotes sem revisar `PATH` e `DOTNET_ROOT`.
 
 ### 4.4 Verificação independente de sistema operacional
 
@@ -238,39 +239,43 @@ No Windows (PowerShell), os comandos `git clone` e `cd` são os mesmos.
 
 > **Etapa obrigatória antes de iniciar a aplicação.** O projeto usa scripts versionados em `database/`, não migrations automáticas.
 
-**1. Descubra os arquivos `.sql` incluídos na versão clonada:**
+O repositório contém estes scripts, que devem ser executados **nesta ordem**:
 
-Linux/macOS:
+1. `database/01_schema.sql` — cria tabelas, relacionamentos, chaves e restrições.
+2. `database/02_seed.sql` — ativa a extensão `pgcrypto` e carrega regiões, lojas, usuários e itens de checklist.
 
-```bash
-find database -type f -name '*.sql' | sort
-```
-
-Windows PowerShell:
-
-```powershell
-Get-ChildItem .\database -Recurse -Filter *.sql | Sort-Object FullName
-```
-
-**2. Abra os scripts e identifique a ordem correta**, normalmente:
-
-1. Criação de tabelas, chaves e restrições (**schema**).
-2. Dados iniciais obrigatórios, como regiões, lojas, usuários e checklist (**seed**).
-3. Eventuais inspeções de exemplo ou scripts adicionais.
-
-**3. Execute os scripts nesta ordem.** Exemplo de comando, substituindo o caminho pelo **nome real** do arquivo de schema encontrado no passo 1:
+**1. Conecte-se ao banco `passocerto` (não ao banco padrão `postgres`) e execute:**
 
 ```bash
-psql -v ON_ERROR_STOP=1 -h localhost -p 5432 -U passocerto_user -d passocerto -f database/ARQUIVO_REAL_DO_SCHEMA.sql
+psql -v ON_ERROR_STOP=1 -h localhost -p 5432 -U passocerto_user -d passocerto -f database/01_schema.sql
+psql -v ON_ERROR_STOP=1 -h localhost -p 5432 -U passocerto_user -d passocerto -f database/02_seed.sql
 ```
 
-Repita para o arquivo real de dados iniciais e os scripts adicionais exigidos pelo projeto.
+Digite a senha do usuário `passocerto_user` quando solicitada. `ON_ERROR_STOP=1` faz o `psql` parar caso um script falhe; **não prossiga para o seed se o schema falhar**.
 
-**Atenção:** `ARQUIVO_REAL_DO_SCHEMA.sql` é um marcador, **não é um arquivo que necessariamente existe no repositório**. Não execute todos os `.sql` em ordem alfabética sem verificar dependências e possíveis comandos destrutivos. Os nomes e a sequência exata devem ser conferidos na pasta `database/` da versão clonada.
+> **Nota sobre `pgcrypto`:** o script `02_seed.sql` começa com `CREATE EXTENSION IF NOT EXISTS pgcrypto;`. Se o usuário da aplicação não tiver permissão para instalar a extensão, conecte-se especificamente ao banco `passocerto` com um usuário administrador, execute `CREATE EXTENSION IF NOT EXISTS pgcrypto;` e só depois execute o seed com `passocerto_user`.
 
-No DBeaver: crie uma conexão para `localhost:5432`, banco `passocerto`, usuário `passocerto_user`; abra os arquivos SQL em ordem e execute cada script no editor SQL.
+No DBeaver: conecte-se a `localhost:5432`, selecione **Database: `passocerto`**, com o usuário `passocerto_user`, abra `01_schema.sql` e execute-o; depois abra e execute `02_seed.sql` na **mesma conexão**.
 
-**4. Verifique as tabelas:**
+**2. Confira a conexão antes de consultar as tabelas:**
+
+```bash
+psql -h localhost -p 5432 -U passocerto_user -d passocerto -c "SELECT current_database(), current_user;"
+```
+
+Se preferir usar `sudo -u postgres psql`, informe o banco explicitamente:
+
+```bash
+sudo -u postgres psql -d passocerto
+```
+
+Sem `-d passocerto`, esse comando geralmente conecta no banco padrão **`postgres`**; ali as tabelas do PassoCerto não aparecerão. Em qualquer editor SQL, confirme antes:
+
+```sql
+SELECT current_database(), current_schema();
+```
+
+**3. Verifique as tabelas (conectado ao banco `passocerto`):**
 
 ```sql
 SELECT table_name
@@ -295,7 +300,9 @@ SELECT COUNT(*) FROM itens_checklist;
 
 No `Program.cs`, a aplicação lê a connection string chamada **`DefaultConnection`** a partir das configurações do ASP.NET Core.
 
-**Atenção à versão publicada:** no `appsettings.json` consultado, `ConnectionStrings` aparece dentro de `Logging`, mas `GetConnectionString("DefaultConnection")` procura `ConnectionStrings` na **raiz**. A variável de ambiente e o User Secrets descritos abaixo definem o caminho correto; também é recomendável corrigir a estrutura do JSON no repositório, removendo a credencial versionada. Exemplo de formato correto (sem senha):
+O arquivo `appsettings.json` foi disponibilizado em versão corrigida junto a este README. A chave `ConnectionStrings` deve ficar **na raiz do JSON**, nunca dentro de `Logging`. Não armazene senhas reais em arquivos versionados.
+
+Formato seguro recomendado para o `appsettings.json` do repositório:
 
 ```json
 {
@@ -305,9 +312,14 @@ No `Program.cs`, a aplicação lê a connection string chamada **`DefaultConnect
       "Microsoft.AspNetCore": "Warning"
     }
   },
-  "AllowedHosts": "*"
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "DefaultConnection": ""
+  }
 }
 ```
+
+A connection string real é fornecida pelo ambiente ou pelo User Secrets, nas opções abaixo. **Substitua o arquivo `appsettings.json` do projeto pelo arquivo corrigido disponibilizado e troque a senha anteriormente publicada**, caso ela tenha sido utilizada fora de um ambiente descartável.
 
 ### Opção A — variável de ambiente (recomendada)
 
@@ -408,12 +420,12 @@ O enunciado da prova prevê uma carga inicial de usuários de exemplo. **Use ape
 | `carla.nunes` | ADMINISTRADOR | Todas as regiões |
 | `sergio.lima` | SUPERVISOR | Interior; usuário inativo |
 
-O enunciado informa uma **senha de demonstração para a carga inicial**. Consulte as instruções de avaliação/seed ao executar localmente; não reutilize essa senha em produção. Verifique as contas realmente disponíveis com a consulta SQL indicada na seção 7.
+**Senha de demonstração de todos os usuários listados: `Prova@123`.** Ela é definida pelo `database/02_seed.sql` (hash BCrypt via `pgcrypto`) e deve ser utilizada **somente no ambiente local da prova**. O usuário `sergio.lima` está inativo e não deve conseguir entrar, mesmo com essa senha. Verifique as contas realmente disponíveis com a consulta SQL indicada na seção 7.
 
 ### Teste funcional rápido
 
 1. Acesse a página de login.
-2. Entre com um supervisor ativo existente no banco.
+2. Entre com `paulo.mendes` / `Prova@123` (supervisor ativo de Litoral).
 3. Abra **Lojas** e confira a abrangência regional.
 4. Clique em **Nova inspeção**, selecione uma loja permitida e uma data.
 5. Preencha alguns itens e **salve o rascunho**.
@@ -582,3 +594,5 @@ git status
 - PostgreSQL: https://www.postgresql.org/download/
 
 ---
+
+**Nota de segurança:** o repositório deve manter fora do controle de versão as senhas reais e os arquivos de segredo local. O README apresenta marcadores para que cada avaliador utilize sua própria configuração. Não utilize credenciais de demonstração em produção.
