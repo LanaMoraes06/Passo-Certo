@@ -1,0 +1,60 @@
+
+@page "{id:long}"
+@model PassoCerto.Web.Pages.Admin.Regioes.EditarModel
+
+@{
+    ViewData["Title"] = "Editar região";
+}
+
+<div class="container py-4">
+
+    <h1 class="h3 fw-bold">Editar região</h1>
+
+    <p class="text-muted">
+        Atualize as informações da região.
+    </p>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+
+            <form method="post">
+
+                <input type="hidden" asp-for="Input.Id" />
+
+                <div class="mb-3">
+
+                    <label asp-for="Input.Nome"
+                           class="form-label"></label>
+
+                    <input asp-for="Input.Nome"
+                           class="form-control" />
+
+                    <span asp-validation-for="Input.Nome"
+                          class="text-danger small"></span>
+
+                </div>
+
+                <div class="d-flex gap-2">
+
+                    <button type="submit"
+                            class="btn btn-primary">
+                        Salvar alterações
+                    </button>
+
+                    <a asp-page="Index"
+                       class="btn btn-outline-secondary">
+                        Cancelar
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

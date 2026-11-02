@@ -1,0 +1,55 @@
+@page
+@model PassoCerto.Web.Pages.Admin.Regioes.CriarModel
+
+@{
+    ViewData["Title"] = "Cadastrar região";
+}
+
+<div class="container py-4">
+
+    <h1 class="h3 fw-bold">Cadastrar região</h1>
+
+    <p class="text-muted">
+        Informe os dados da nova região.
+    </p>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+
+            <form method="post">
+
+                <div class="mb-3">
+                    <label asp-for="Input.Nome"
+                           class="form-label"></label>
+
+                    <input asp-for="Input.Nome"
+                           class="form-control" />
+
+                    <span asp-validation-for="Input.Nome"
+                          class="text-danger small"></span>
+                </div>
+
+                <div class="d-flex gap-2">
+
+                    <button type="submit"
+                            class="btn btn-primary">
+                        Salvar região
+                    </button>
+
+                    <a asp-page="Index"
+                       class="btn btn-outline-secondary">
+                        Cancelar
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

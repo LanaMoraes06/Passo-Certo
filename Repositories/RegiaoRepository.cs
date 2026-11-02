@@ -17,7 +17,7 @@ public class RegiaoRepository(NpgsqlDataSource dataSource) : IRegiaoRepository
             SELECT id, nome, ativo,
                    criado_em, atualizado_em
             FROM regioes
-            ORDER BY nome
+            ORDER BY id ASC
             """;
 
         await using var connection =
@@ -73,7 +73,7 @@ public class RegiaoRepository(NpgsqlDataSource dataSource) : IRegiaoRepository
                criado_em, atualizado_em
         FROM regioes
         WHERE ativo = TRUE
-        ORDER BY nome
+        ORDER BY id ASC
         """;
 
     await using var connection =
