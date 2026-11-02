@@ -6,6 +6,8 @@ using PassoCerto.Web.Extensions;
 using PassoCerto.Web.Models.DTOs.Inspecoes;
 using PassoCerto.Web.Models.Entity;
 using PassoCerto.Web.Services;
+using System.Globalization;
+using System.Text;
 
 namespace PassoCerto.Web.Pages.Inspecoes;
 
@@ -56,4 +58,103 @@ public class IndexModel(
             Erro = ex.Message;
         }
     }
+
+public async Task<IActionResult> OnGetExportarAsync()
+{
+    long usuarioId = User.ObterUsuarioId();
+
+    if (!ModelState.IsValid)
+        return BadRequest("Filtros inválidos.");
+
+    var filtroExportacao = new FiltroHistorico
+    {
+        DataInicio = Filtro.DataInicio,
+        DataFim = Filtro.DataFim,
+        LojaId = Filtro.LojaId,
+        RegiaoId = Filtro.RegiaoId,
+        Status = Filtro.Status,
+        Pagina = 1,
+        TamanhoPagina = 10
+    };
+
+    var registros = new List<InspecaoResumoDto>();
+
+    try
+    {
+        while (true)
+        {
+            var resultado = await inspecaoService
+                .BuscarHistoricoAsync(
+                    filtroExportacao, usuarioId);
+
+            registros.AddRange(resultado.Itens);
+
+            if (registros.Count >= resultado.Total ||
+                resultado.Itens.Count == 0)
+            {
+                break;
+            }
+
+            filtroExportacao.Pagina++;
+        }
+    }
+    catch (BusinessException ex)
+    {
+        ModelState.AddModelError(
+            string.Empty, ex.Message);
+
+        return BadRequest(ex.Message);
+    }
+
+    var csv = new StringBuilder();
+
+    csv.AppendLine(
+        "ID;Loja;Região;Data da visita;Status;Percentual");
+
+    foreach (var item in registros)
+    {
+        string percentual = item.PercentualRealizacao.HasValue
+            ? item.PercentualRealizacao.Value.ToString(
+                "N1", CultureInfo.GetCultureInfo("pt-BR"))
+            : "";
+
+        csv.AppendLine(string.Join(";",
+            item.Id.ToString(),
+            EscaparCsv(item.LojaNome),
+            EscaparCsv(item.RegiaoNome),
+            item.DataVisita.ToString("dd/MM/yyyy"),
+            item.Status.ToString(),
+            percentual
+        ));
+    }
+
+    byte[] conteudo = new UTF8Encoding(true)
+        .GetPreamble()
+        .Concat(Encoding.UTF8.GetBytes(csv.ToString()))
+        .ToArray();
+
+    string nomeArquivo =
+        $"historico-inspecoes-{DateTime.Now:yyyyMMdd-HHmmss}.csv";
+
+    return File(
+        conteudo,
+        "text/csv; charset=utf-8",
+        nomeArquivo);
+}
+
+private static string EscaparCsv(string? valor)
+{
+    valor ??= string.Empty;
+
+    string inicio = valor.TrimStart();
+
+    if (inicio.Length > 0 &&
+        "=+-@".Contains(inicio[0]))
+    {
+        valor = "'" + valor;
+    }
+
+    return "\"" + valor.Replace("\"", "\"\"") + "\"";
+}
+
 }
