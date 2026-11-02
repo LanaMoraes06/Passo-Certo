@@ -66,6 +66,17 @@
                             Dashboard
                         </a>
                     </li>
+
+                    @if (User.IsInRole("ADMINISTRADOR"))
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link"
+                               asp-page="/Admin/Index">
+                                Administração
+                            </a>
+                        </li>
+                    }
+
                 }
 
             </ul>

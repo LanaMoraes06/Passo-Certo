@@ -19,7 +19,15 @@ public class LoginModel(AuthService authService) : PageModel
     public IActionResult OnGet()
     {
         if (User.Identity?.IsAuthenticated == true)
+        {
+            if (User.IsInRole("ADMINISTRADOR"))
+                return RedirectToPage("/Admin/Index");
+
+            if (User.IsInRole("DIRETORIA"))
+                return RedirectToPage("/Dashboard/Index");
+
             return RedirectToPage("/Index");
+        }
 
         return Page();
     }
@@ -40,7 +48,6 @@ public class LoginModel(AuthService authService) : PageModel
             return Page();
         }
 
-        // Claims = informações da identidade autenticada.
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
@@ -61,6 +68,12 @@ public class LoginModel(AuthService authService) : PageModel
             {
                 IsPersistent = false
             });
+
+        if (principal.IsInRole("ADMINISTRADOR"))
+            return RedirectToPage("/Admin/Index");
+
+        if (principal.IsInRole("DIRETORIA"))
+            return RedirectToPage("/Dashboard/Index");
 
         return RedirectToPage("/Index");
     }

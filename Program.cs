@@ -98,6 +98,8 @@ builder.Services.AddAuthorizationBuilder()
     builder.Services.AddScoped<ChecklistService>();
     builder.Services.AddScoped<InspecaoService>();
     builder.Services.AddScoped<LojaService>();
+    builder.Services.AddScoped<RegiaoService>();
+
 
     
 var app = builder.Build();
