@@ -10,7 +10,12 @@ builder.Services.AddRazorPages(options =>
 {
     options.Conventions.AuthorizeFolder("/");
     options.Conventions.AllowAnonymousToPage("/Auth/Login");
+    options.Conventions.AllowAnonymousToPage("/Auth/AcessoNegado");
     options.Conventions.AllowAnonymousToPage("/Error");
+
+    options.Conventions.AuthorizeFolder(
+        "/Admin",
+        "SomenteAdministrador");
 });
 
 builder.Services.AddNpgsqlDataSource(
@@ -53,7 +58,7 @@ builder.Services
     .AddCookie(options =>
     {
         options.LoginPath = "/Auth/Login";
-        options.AccessDeniedPath = "/Error";
+        options.AccessDeniedPath = "/Auth/AcessoNegado";        
 
         options.Cookie.Name = "PassoCerto.Auth";
         options.Cookie.HttpOnly = true;
@@ -81,6 +86,11 @@ builder.Services.AddAuthorizationBuilder()
     {
         policy.RequireRole("DIRETORIA");
     
+    }).AddPolicy("SomenteAdministrador", policy =>
+    {
+
+    policy.RequireAuthenticatedUser();
+    policy.RequireRole("ADMINISTRADOR");
     });
     
 

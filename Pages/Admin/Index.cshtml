@@ -1,0 +1,113 @@
+@page
+@model PassoCerto.Web.Pages.Admin.IndexModel
+
+@{
+    ViewData["Title"] = "Administração";
+}
+
+<div class="container py-4">
+
+    <div class="mb-4">
+        <span class="badge bg-primary mb-2">
+            Administração
+        </span>
+
+        <h1 class="h3 fw-bold">
+            Painel administrativo
+        </h1>
+
+        <p class="text-muted">
+            Gerencie os cadastros e configurações do PassoCerto.
+        </p>
+    </div>
+
+    <div class="alert alert-info mb-4">
+        As alterações nos cadastros podem afetar novas inspeções.
+        Os registros históricos devem permanecer preservados.
+    </div>
+
+    <div class="row g-4">
+
+        <div class="col-md-6 col-xl-4">
+            <div class="card feature-card h-100">
+                <div class="card-body p-4">
+                    <div class="feature-icon mb-3">🌎</div>
+                    <h2 class="h5 fw-bold">Regiões</h2>
+                    <p class="text-muted">
+                        Cadastre e mantenha as regiões da rede.
+                    </p>
+                    <a asp-page="/Admin/Regioes/Index"
+                       class="btn btn-outline-primary">
+                        Gerenciar regiões
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xl-4">
+            <div class="card feature-card h-100">
+                <div class="card-body p-4">
+                    <div class="feature-icon mb-3">🏬</div>
+                    <h2 class="h5 fw-bold">Lojas</h2>
+                    <p class="text-muted">
+                        Gerencie unidades, gerentes e regiões.
+                    </p>
+                    <a asp-page="/Admin/Lojas/Index"
+                       class="btn btn-outline-primary">
+                        Gerenciar lojas
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xl-4">
+            <div class="card feature-card h-100">
+                <div class="card-body p-4">
+                    <div class="feature-icon mb-3">👥</div>
+                    <h2 class="h5 fw-bold">Usuários</h2>
+                    <p class="text-muted">
+                        Cadastre usuários e defina seus perfis.
+                    </p>
+                    <a asp-page="/Admin/Usuarios/Index"
+                       class="btn btn-outline-primary">
+                        Gerenciar usuários
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xl-4">
+            <div class="card feature-card h-100">
+                <div class="card-body p-4">
+                    <div class="feature-icon mb-3">🔗</div>
+                    <h2 class="h5 fw-bold">Vínculos regionais</h2>
+                    <p class="text-muted">
+                        Defina em quais regiões cada supervisor atua.
+                    </p>
+                    <a asp-page="/Admin/Vinculos/Index"
+                       class="btn btn-outline-primary">
+                        Gerenciar vínculos
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xl-4">
+            <div class="card feature-card h-100">
+                <div class="card-body p-4">
+                    <div class="feature-icon mb-3">📋</div>
+                    <h2 class="h5 fw-bold">Checklist</h2>
+                    <p class="text-muted">
+                        Gerencie categorias, itens e suas ordens.
+                    </p>
+                    <a asp-page="/Admin/Checklist/Index"
+                       class="btn btn-outline-primary">
+                        Gerenciar checklist
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
