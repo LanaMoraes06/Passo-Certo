@@ -54,7 +54,6 @@ public class LoginModel(AuthService authService) : PageModel
 
         var principal = new ClaimsPrincipal(identity);
 
-        // Solicita ao ASP.NET Core a criação do cookie.
         await HttpContext.SignInAsync(
             CookieAuthenticationDefaults.AuthenticationScheme,
             principal,

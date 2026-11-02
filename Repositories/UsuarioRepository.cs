@@ -5,16 +5,10 @@ using PassoCerto.Web.Repositories.Interfaces;
 
 namespace PassoCerto.Web.Repositories;
 
-public class UsuarioRepository : IUsuarioRepository
+public class UsuarioRepository(NpgsqlDataSource dataSource) : IUsuarioRepository
 {
-    private readonly NpgsqlDataSource _dataSource;
+    private readonly NpgsqlDataSource _dataSource = dataSource;
 
-    public UsuarioRepository(NpgsqlDataSource dataSource)
-    {
-        _dataSource = dataSource;
-    }
-
-    // SELECT - Listar usuários
     public async Task<List<Usuario>> ListarAsync()
     {
         var usuarios = new List<Usuario>();
@@ -43,7 +37,6 @@ public class UsuarioRepository : IUsuarioRepository
         return usuarios;
     }
 
-    // SELECT - Buscar usuário por ID
     public async Task<Usuario?> BuscarPorIdAsync(long id)
     {
         const string sql = """
@@ -70,7 +63,6 @@ public class UsuarioRepository : IUsuarioRepository
         return Mapear(reader);
     }
 
-    // SELECT - Buscar usuário pelo login
     public async Task<Usuario?> BuscarPorLoginAsync(string login)
     {
         const string sql = """
@@ -97,7 +89,6 @@ public class UsuarioRepository : IUsuarioRepository
         return Mapear(reader);
     }
 
-    // SELECT - Regiões vinculadas ao supervisor
     public async Task<List<long>> ListarRegioesPorUsuarioAsync(
         long usuarioId)
     {
@@ -129,7 +120,6 @@ public class UsuarioRepository : IUsuarioRepository
         return regioes;
     }
 
-    // INSERT - Criar usuário
     public async Task<long> CriarAsync(Usuario usuario)
     {
         const string sql = """
@@ -157,7 +147,6 @@ public class UsuarioRepository : IUsuarioRepository
         return Convert.ToInt64(resultado);
     }
 
-    // UPDATE - Atualizar dados do usuário
     public async Task<bool> AtualizarAsync(Usuario usuario)
     {
         const string sql = """
@@ -188,7 +177,6 @@ public class UsuarioRepository : IUsuarioRepository
         return linhasAfetadas > 0;
     }
 
-    // UPDATE - Alterar somente a senha
     public async Task<bool> AtualizarSenhaHashAsync(
         long id,
         string novoHash)
@@ -242,7 +230,6 @@ public class UsuarioRepository : IUsuarioRepository
         return linhasAfetadas > 0;
     }
 
-    // Mapeamento: PostgreSQL -> Usuario
     private static Usuario Mapear(NpgsqlDataReader reader)
     {
         return new Usuario

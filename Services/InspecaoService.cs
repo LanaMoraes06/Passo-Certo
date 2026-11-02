@@ -10,7 +10,6 @@ public class InspecaoService(
     IInspecaoRepository inspecaoRepository,
     ILojaRepository lojaRepository)
 {
-    // 1. CRIAR INSPEÇÃO
     public async Task<long> CriarAsync(
         CriarInspecaoInput input,
         long usuarioId)

@@ -16,11 +16,9 @@ public class RespostaInspecao
     public string ItemDescricao { get; set; } = string.Empty;
     public int ItemOrdem { get; set; }
 
-    // Resposta do supervisor
     public TipoResposta? Resposta { get; set; }
     public string? Observacao { get; set; }
 
-    // Auditoria
     public DateTime CriadoEm { get; set; }
     public DateTime AtualizadoEm { get; set; }
 

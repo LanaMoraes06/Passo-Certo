@@ -9,7 +9,6 @@ public class RegiaoRepository(NpgsqlDataSource dataSource) : IRegiaoRepository
 {
     private readonly NpgsqlDataSource _dataSource = dataSource;
 
-    // SELECT - Listar regioes
     public async Task<List<Regiao>> ListarAsync()
     {
         var regioes = new List<Regiao>();
@@ -39,7 +38,6 @@ public class RegiaoRepository(NpgsqlDataSource dataSource) : IRegiaoRepository
         return regioes;
     }
 
-    // SELECT - Buscar região por ID
     public async Task<Regiao?> BuscarPorIdAsync(long id)
     {
         const string sql = """
@@ -66,7 +64,6 @@ public class RegiaoRepository(NpgsqlDataSource dataSource) : IRegiaoRepository
         return Mapear(reader);
     }
 
-    // SELECT - Buscar ativos
    public async Task<List<Regiao>> ListarAtivasAsync()
 {
     var regioes = new List<Regiao>();
@@ -96,7 +93,6 @@ public class RegiaoRepository(NpgsqlDataSource dataSource) : IRegiaoRepository
     return regioes;
 }
 
-    // INSERT - Criar região
     public async Task<long> CriarAsync(Regiao regiao)
     {
         const string sql = """
@@ -122,7 +118,6 @@ public class RegiaoRepository(NpgsqlDataSource dataSource) : IRegiaoRepository
     }
 
 
-    // UPDATE - Atualizar dados da região
     public async Task<bool> AtualizarAsync(Regiao regiao)
     {
         const string sql = """
@@ -151,7 +146,6 @@ public class RegiaoRepository(NpgsqlDataSource dataSource) : IRegiaoRepository
     }
 
 
-    // UPDATE - Desativação lógica
     public async Task<bool> DesativarAsync(long id)
     {
         const string sql = """
@@ -177,7 +171,6 @@ public class RegiaoRepository(NpgsqlDataSource dataSource) : IRegiaoRepository
         return linhasAfetadas > 0;
     }
 
-    // Mapeamento: PostgreSQL -> Regiao
     private static Regiao Mapear(NpgsqlDataReader reader)
     {
         return new Regiao

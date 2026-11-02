@@ -445,7 +445,6 @@ public class InspecaoRepository(NpgsqlDataSource dataSource)
         return true;
     }
 
-    // UPDATE - Concluir inspeção
     public async Task<bool> ConcluirAsync(
         long inspecaoId, long usuarioId)
     {
@@ -575,7 +574,6 @@ public class InspecaoRepository(NpgsqlDataSource dataSource)
         return true;
     }
 
-    // MAPEAMENTO - Inspecao
     private static Inspecao Mapear(NpgsqlDataReader reader)
     {
         return new Inspecao

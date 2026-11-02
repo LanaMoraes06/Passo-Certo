@@ -38,7 +38,6 @@ public class LojaRepository(NpgsqlDataSource dataSource) : ILojaRepository
         return lojas;
     }
 
-    // SELECT - Buscar loja por ID
     public async Task<Loja?> BuscarPorIdAsync(long id)
     {
         const string sql = """
@@ -96,7 +95,6 @@ public class LojaRepository(NpgsqlDataSource dataSource) : ILojaRepository
 
        return lojas;
    }
-    // INSERT - Criar loja
     public async Task<long> CriarAsync(Loja loja)
     {
         const string sql = """
