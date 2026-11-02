@@ -47,6 +47,8 @@ public class IndexModel(
             .ObterResumoPorRegiaoAsync(
                 new FiltroDashboard(),
                 usuarioId);
+        EvolucaoMensal = await dashboardService
+            .ObterEvolucaoMensalAsync(Filtro, usuarioId);
 
         if (Filtro.RegiaoId.HasValue)
         {
@@ -90,4 +92,6 @@ public class IndexModel(
             Erro = ex.Message;
         }
     }
+    public List<EvolucaoMensalDto> EvolucaoMensal
+    { get; private set; } = new();
 }

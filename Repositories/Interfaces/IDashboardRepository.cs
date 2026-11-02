@@ -15,4 +15,8 @@ public interface IDashboardRepository
 
     Task<List<ResumoRegiao>> ObterResumoPorRegiaoAsync(
         FiltroDashboard filtro, long usuarioId);
+
+    Task<List<EvolucaoMensalDto>> ObterEvolucaoMensalAsync(
+    FiltroDashboard filtro,
+    long usuarioId);
 }

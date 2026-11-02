@@ -109,6 +109,100 @@ else
 
 </form>
 
+<div class="card shadow-sm mb-4">
+
+    <div class="card-header bg-white py-3">
+        <h2 class="h5 mb-1">
+            Evolução histórica
+        </h2>
+
+        <p class="text-muted small mb-0">
+            Percentual médio mensal das inspeções concluídas.
+            Os filtros de período, região e loja também
+            são aplicados aqui.
+        </p>
+    </div>
+
+    <div class="card-body">
+
+        @if (!Model.EvolucaoMensal.Any())
+        {
+            <div class="alert alert-info mb-0">
+                Não existem inspeções concluídas
+                para os filtros selecionados.
+            </div>
+        }
+        else
+        {
+            <div class="d-flex flex-column gap-3">
+
+                @foreach (var mes in Model.EvolucaoMensal)
+                {
+                    <div class="row align-items-center g-2">
+
+                        <div class="col-md-2">
+                            <strong>
+                                @mes.Mes.ToString("MM/yyyy")
+                            </strong>
+                        </div>
+
+                        <div class="col-md-7">
+                            @if (mes.PercentualMedio.HasValue)
+                            {
+                                var percentual =
+                                    Math.Clamp(mes.PercentualMedio.Value,
+                                        0m, 100m);
+
+                                <div class="progress"
+                                     style="height: 22px;"
+                                     role="progressbar"
+                                     aria-label="Realização média de @mes.Mes.ToString("MM/yyyy")"
+                                     aria-valuenow="@percentual.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                     aria-valuemin="0"
+                                     aria-valuemax="100">
+
+                                    <div class="progress-bar"
+                                         style="width: @(percentual.ToString(System.Globalization.CultureInfo.InvariantCulture))%;">
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="text-muted">
+                                    Sem percentual calculável
+                                </span>
+                            }
+                        </div>
+
+                        <div class="col-md-3 text-md-end">
+                            <strong>
+                                @(mes.PercentualMedio?.ToString("N1") ?? "—")
+                                @if (mes.PercentualMedio.HasValue)
+                                {
+                                    <text>%</text>
+                                }
+                            </strong>
+
+                            <div class="text-muted small">
+                                @mes.TotalInspecoes inspeção(ões)
+                            </div>
+                        </div>
+
+                    </div>
+                }
+            </div>
+
+            <p class="text-muted small mt-4 mb-0">
+                Cada barra representa a média simples dos
+                percentuais calculáveis das inspeções
+                concluídas naquele mês.
+            </p>
+        }
+
+    </div>
+</div>
+
+
     <div class="row g-3 mb-4">
 
         <div class="col-md-3">

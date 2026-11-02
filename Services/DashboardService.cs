@@ -68,4 +68,14 @@ public class DashboardService(
         if (filtro.LojaId.HasValue && filtro.LojaId.Value <= 0)
             throw new BusinessException("Loja inválida.");
     }
+
+    public Task<List<EvolucaoMensalDto>> ObterEvolucaoMensalAsync(
+    FiltroDashboard filtro,
+    long usuarioId)
+{
+    ValidarFiltros(filtro, usuarioId);
+
+    return dashboardRepository.ObterEvolucaoMensalAsync(
+        filtro, usuarioId);
+}
 }

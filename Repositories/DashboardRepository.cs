@@ -326,4 +326,54 @@ public class DashboardRepository(NpgsqlDataSource dataSource)
 
         return resultado;
     }
+
+
+    public async Task<List<EvolucaoMensalDto>> ObterEvolucaoMensalAsync(
+        FiltroDashboard filtro,
+        long usuarioId)
+    {
+        string sql = $"""
+            WITH inspecoes_visiveis AS (
+                {InspecoesVisiveis}
+            )
+            SELECT
+                DATE_TRUNC('month', data_visita)::date AS mes,
+                AVG(percentual_realizacao) AS percentual_medio,
+                COUNT(*) AS total_inspecoes
+            FROM inspecoes_visiveis
+            WHERE status = 'CONCLUIDA'
+            GROUP BY DATE_TRUNC('month', data_visita)
+            ORDER BY mes
+            """;
+    
+        var resultado = new List<EvolucaoMensalDto>();
+    
+        await using var conexao =
+            await dataSource.OpenConnectionAsync();
+    
+        await using var comando =
+            new NpgsqlCommand(sql, conexao);
+    
+        AdicionarParametros(comando, filtro, usuarioId);
+    
+        await using var reader =
+            await comando.ExecuteReaderAsync();
+    
+        while (await reader.ReadAsync())
+        {
+            resultado.Add(new EvolucaoMensalDto
+            {
+                Mes = reader.GetFieldValue<DateOnly>(0),
+    
+                PercentualMedio = reader.IsDBNull(1)
+                    ? null
+                    : reader.GetDecimal(1),
+    
+                TotalInspecoes = reader.GetInt64(2)
+            });
+        }
+    
+        return resultado;
+    }
+
 }
