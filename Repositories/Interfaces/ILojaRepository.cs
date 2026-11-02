@@ -11,4 +11,14 @@ public interface ILojaRepository : IRepository<Loja>
     Task<Loja?> BuscarParaInspecaoAsync(
         long lojaId,
         long usuarioId);
+
+    Task<bool> ExisteNomeAsync(
+        string nome,
+        long? ignorarId = null);
+
+    Task<bool> ExisteCodigoAsync(
+        string codigo,
+        long? ignorarId = null);
+
+    Task<bool> ReativarAsync(long id);
 }

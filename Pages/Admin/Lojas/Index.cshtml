@@ -1,0 +1,131 @@
+@page
+@model PassoCerto.Web.Pages.Admin.Lojas.IndexModel
+
+@{
+    ViewData["Title"] = "Gerenciar lojas";
+}
+
+<div class="container py-4">
+
+    <div class="d-flex justify-content-between
+                align-items-center flex-wrap gap-3 mb-4">
+
+        <div>
+            <h1 class="h3 fw-bold">Lojas</h1>
+            <p class="text-muted mb-0">
+                Gerencie as unidades do PassoCerto.
+            </p>
+        </div>
+
+        <a asp-page="Criar" class="btn btn-primary">
+            + Nova loja
+        </a>
+    </div>
+
+    @if (TempData["Sucesso"] is string sucesso)
+    {
+        <div class="alert alert-success">@sucesso</div>
+    }
+
+    @if (TempData["Erro"] is string erro)
+    {
+        <div class="alert alert-danger">@erro</div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+
+            @if (!Model.Lojas.Any())
+            {
+                <p class="text-muted mb-0">
+                    Nenhuma loja cadastrada.
+                </p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Nome</th>
+                                <th>Gerente</th>
+                                <th>Região</th>
+                                <th>Situação</th>
+                                <th class="text-end">Ações</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var loja in Model.Lojas)
+                            {
+                                <tr>
+                                    <td>@loja.Codigo</td>
+                                    <td>@loja.Nome</td>
+                                    <td>@loja.GerenteNome</td>
+                                    <td>@loja.RegiaoId</td>
+
+                                    <td>
+                                        @if (loja.Ativo)
+                                        {
+                                            <span class="badge bg-success">
+                                                Ativa
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">
+                                                Inativa
+                                            </span>
+                                        }
+                                    </td>
+
+                                    <td class="text-end">
+                                        <div class="d-flex gap-2
+                                                    justify-content-end">
+
+                                            <a asp-page="Editar"
+                                               asp-route-id="@loja.Id"
+                                               class="btn btn-sm btn-outline-primary">
+                                                Editar
+                                            </a>
+
+                                            @if (loja.Ativo)
+                                            {
+                                                <form method="post"
+                                                      asp-page-handler="Desativar"
+                                                      asp-route-id="@loja.Id">
+
+                                                    <button type="submit"
+                                                            class="btn btn-sm btn-outline-danger"
+                                                            onclick="return confirm('Deseja desativar esta loja?')">
+                                                        Desativar
+                                                    </button>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <form method="post"
+                                                      asp-page-handler="Reativar"
+                                                      asp-route-id="@loja.Id">
+
+                                                    <button type="submit"
+                                                            class="btn btn-sm btn-outline-success"
+                                                            onclick="return confirm('Deseja reativar esta loja?')">
+                                                        Reativar
+                                                    </button>
+                                                </form>
+                                            }
+
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
