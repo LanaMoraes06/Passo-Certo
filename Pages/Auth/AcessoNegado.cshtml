@@ -1,0 +1,26 @@
+@page
+@model PassoCerto.Web.Pages.Auth.AcessoNegadoModel
+
+@{
+    ViewData["Title"] = "Acesso negado";
+}
+
+<div class="container text-center py-5">
+
+    <div class="mb-3" style="font-size: 4rem;">
+        🔒
+    </div>
+
+    <h1 class="h3 fw-bold">Acesso negado</h1>
+
+    <p class="text-muted mt-3">
+        Você não possui permissão para acessar
+        esta funcionalidade do PassoCerto.
+    </p>
+
+    <a asp-page="/Index"
+       class="btn btn-primary mt-3">
+        Voltar ao início
+    </a>
+
+</div>
