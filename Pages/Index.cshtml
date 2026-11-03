@@ -36,6 +36,15 @@
                         Nova inspeção
                     </a>
                 }
+                @if (User.IsInRole("ADMINISTRADOR"))
+{
+    <li class="nav-item">
+        <a class="nav-link"
+           asp-page="/Admin/Index">
+            Administração
+        </a>
+    </li>
+}
             </div>
 
             <div class="col-lg-4 text-center d-none d-lg-block">

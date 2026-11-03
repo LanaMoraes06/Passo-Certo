@@ -1,0 +1,184 @@
+@page
+@model PassoCerto.Web.Pages.Admin.Vinculos.IndexModel
+
+@{
+    ViewData["Title"] = "Vínculos regionais";
+}
+
+<div class="container py-4">
+
+    <div class="mb-4">
+        <h1 class="h3 fw-bold">
+            Vínculos regionais
+        </h1>
+
+        <p class="text-muted mb-0">
+            Defina as regiões que cada supervisor
+            pode acessar para realizar inspeções.
+        </p>
+    </div>
+
+    @if (TempData["Sucesso"] is string sucesso)
+    {
+        <div class="alert alert-success">
+            @sucesso
+        </div>
+    }
+
+    <div asp-validation-summary="ModelOnly"
+         class="text-danger mb-3"></div>
+
+    @if (!Model.Supervisores.Any())
+    {
+        <div class="alert alert-info">
+            Nenhum supervisor ativo cadastrado.
+            Cadastre ou ative um supervisor
+            antes de gerenciar os vínculos.
+        </div>
+
+        <a asp-page="/Admin/Usuarios/Index"
+           class="btn btn-outline-primary">
+            Gerenciar usuários
+        </a>
+    }
+    else
+    {
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+
+                <form method="get">
+
+                    <label asp-for="UsuarioId"
+                           class="form-label fw-semibold">
+                        Selecione o supervisor
+                    </label>
+
+                    <div class="row g-2">
+
+                        <div class="col-md-9">
+                            <select asp-for="UsuarioId"
+                                    class="form-select">
+
+                                @foreach (var supervisor
+                                    in Model.Supervisores)
+                                {
+                                    <option value="@supervisor.Id">
+                                        @supervisor.Login
+                                    </option>
+                                }
+
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <button type="submit"
+                                    class="btn btn-outline-primary w-100">
+                                Carregar regiões
+                            </button>
+                        </div>
+
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+
+            <div class="card-header bg-white py-3">
+                <h2 class="h5 mb-0">
+                    Regiões permitidas
+                </h2>
+            </div>
+
+            <div class="card-body">
+
+                <p class="text-muted small">
+                    Marque as regiões em que
+                    o supervisor poderá realizar inspeções.
+                </p>
+
+                <form method="post">
+
+                    <input type="hidden"
+                           asp-for="UsuarioId" />
+
+                    @if (!Model.Regioes.Any())
+                    {
+                        <div class="alert alert-warning">
+                            Nenhuma região ativa disponível.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row g-3">
+
+                            @foreach (var regiao in Model.Regioes)
+                            {
+                                var marcada =
+                                    Model.RegioesSelecionadas
+                                        .Contains(regiao.Id);
+
+                                <div class="col-md-6">
+
+                                    <div class="border rounded p-3">
+
+                                        <div class="form-check">
+
+                                            <input
+                                                type="checkbox"
+                                                class="form-check-input"
+                                                name="RegioesSelecionadas"
+                                                value="@regiao.Id"
+                                                id="regiao-@regiao.Id"
+                                                checked="@marcada" />
+
+                                            <label
+                                                class="form-check-label fw-semibold"
+                                                for="regiao-@regiao.Id">
+
+                                                @regiao.Nome
+
+                                            </label>
+
+                                        </div>
+
+                                    </div>
+                                </div>
+                            }
+
+                        </div>
+                    }
+
+                    <hr class="my-4" />
+
+                    <div class="d-flex justify-content-between
+                                align-items-center flex-wrap gap-2">
+
+                        <span class="text-muted small">
+                            Deixar todas as regiões desmarcadas
+                            remove os vínculos do supervisor.
+                        </span>
+
+                        <button type="submit"
+                                class="btn btn-primary">
+                            Salvar vínculos
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+    }
+
+    <div class="mt-4">
+        <a asp-page="/Admin/Index"
+           class="btn btn-outline-secondary">
+            Voltar ao painel
+        </a>
+    </div>
+
+</div>
