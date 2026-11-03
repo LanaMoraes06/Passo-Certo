@@ -1,212 +1,220 @@
 # 👟 PassoCerto — Sistema de Inspeções de Lojas
 
-Sistema web desenvolvido em **ASP.NET Core 8 com Razor Pages**, voltado ao gerenciamento de inspeções operacionais em lojas de varejo.
+Aplicação web para registrar, acompanhar e administrar inspeções operacionais em lojas de varejo. Desenvolvida como **prova técnica de Desenvolvedor Júnior**, utilizando **C# / ASP.NET Core 8 (Razor Pages)**, **PostgreSQL 18**, **Npgsql** e **Docker Compose**.
 
-O projeto permite que supervisores realizem inspeções por meio de checklists, acompanhem pendências e consultem históricos. A diretoria pode visualizar indicadores de desempenho, enquanto administradores gerenciam usuários, regiões, lojas e itens do checklist.
+O projeto possui três perfis de acesso: **Supervisor**, **Diretoria** e **Administrador**. O supervisor realiza inspeções nas lojas das regiões às quais está vinculado; a diretoria consulta indicadores; e o administrador gerencia os cadastros do sistema.
 
-A aplicação utiliza PostgreSQL para persistência de dados, Npgsql para acesso ao banco e Docker Compose para facilitar a execução do ambiente.
+> **Execução rápida:** com Docker Engine, Docker Compose e Docker Buildx instalados, basta clonar, configurar o `.env` e executar `docker compose up --build -d`. As instruções completas estão abaixo.
 
-## 📋 Sobre o projeto
+## 🚀 Comece por aqui — Docker (recomendado)
 
-O PassoCerto foi desenvolvido como parte de uma prova técnica para Desenvolvedor Júnior.
+### Pré-requisitos
 
-Seu objetivo é oferecer uma solução para padronizar inspeções nas unidades de uma rede varejista, garantindo rastreabilidade, controle de acesso e acompanhamento dos resultados.
+- [Git](https://git-scm.com/)
+- [Docker Engine](https://docs.docker.com/engine/install/) em execução
+- [Docker Compose](https://docs.docker.com/compose/install/) (comando `docker compose`)
+- Docker Buildx
+- Acesso à internet para baixar imagens e dependências na primeira execução
+- Porta **8080** disponível no computador
 
-### Objetivos
+**Não é necessário instalar o SDK .NET nem PostgreSQL localmente** para esta forma de execução.
 
-- Digitalizar as inspeções operacionais das lojas.
-- Organizar os itens de inspeção em categorias.
-- Registrar conformidades e pendências.
-- Restringir o acesso conforme o perfil do usuário.
-- Preservar o histórico das inspeções concluídas.
-- Disponibilizar indicadores gerenciais.
-- Facilitar a implantação por meio do Docker.
+### 1. Clone o repositório
 
-## 🛠️ Tecnologias utilizadas
+```bash
+git clone https://github.com/LanaMoraes06/Passo-Certo.git
+cd Passo-Certo
+```
 
-| Tecnologia | Finalidade |
-|---|---|
-| C# | Linguagem de programação |
-| .NET 8 | Plataforma de desenvolvimento |
-| ASP.NET Core Razor Pages | Interface web e processamento das requisições |
-| PostgreSQL 18 | Banco de dados relacional |
-| Npgsql | Acesso ao PostgreSQL |
-| SQL | Consultas e operações de persistência |
-| BCrypt | Hash de senhas |
-| Cookie Authentication | Autenticação dos usuários |
-| Bootstrap | Interface responsiva |
-| Docker | Containerização da aplicação |
-| Docker Compose | Orquestração dos serviços |
+> O diretório criado pelo clone se chama `Passo-Certo`. O projeto C# dentro dele se chama `PassoCerto.Web`.
 
+### 2. Configure o banco
 
-O acesso ao banco é realizado por meio de consultas SQL parametrizadas, sem dependência do Entity Framework Core para as operações de persistência.
+```bash
+cp .env.example .env
+```
+
+Edite o arquivo `.env` e **substitua** o valor de exemplo por uma senha de sua escolha:
+
+```dotenv
+DB_PASSWORD=escolha_uma_senha_forte_e_exclusiva
+```
+
+Essa senha é usada **apenas pelo PostgreSQL no Docker** e não é a senha de login dos usuários da aplicação. Não publique o `.env` nem cole seu conteúdo em issues ou logs.
+
+### 3. Inicie a aplicação
+
+```bash
+docker compose config --quiet
+docker compose up --build -d
+```
+
+O Compose inicia dois serviços:
+
+| Serviço | Responsabilidade | Acesso |
+|---|---|---|
+| `db` | PostgreSQL 18 com scripts de inicialização | Apenas na rede interna do Docker |
+| `web` | ASP.NET Core 8 / Razor Pages | `http://localhost:8080` |
+
+O banco é iniciado primeiro, e a aplicação aguarda o healthcheck do PostgreSQL. A conexão com o banco dentro da rede Docker usa `Host=db`, configurado pelo `compose.yaml`.
+
+### 4. Verifique a inicialização
+
+```bash
+docker compose ps
+```
+
+O esperado é `db` em estado saudável (*healthy*) e `web` em execução. Para consultar os logs:
+
+```bash
+docker compose logs --tail=100 db
+docker compose logs --tail=100 web
+```
+
+**Acesse:** **http://localhost:8080** (página de login).
+
+> O ambiente do `compose.yaml` é **local/de demonstração**: publica a aplicação apenas em `127.0.0.1:8080`, usa HTTP e define `ASPNETCORE_ENVIRONMENT=Development`. Não utilize essa configuração como implantação pública de produção.
+
+### 5. Faça login com uma conta de demonstração
+
+Os usuários são carregados por `database/02_seed.sql` durante a primeira inicialização do PostgreSQL.
+
+| Perfil | Login | Senha de demonstração | Situação |
+|---|---|---|---|
+| Administrador | `carla.nunes` | `Prova@123` | Ativa |
+| Diretoria | `helena.prado` | `Prova@123` | Ativa |
+| Supervisor — Litoral | `paulo.mendes` | `Prova@123` | Ativa |
+| Supervisor — Metropolitana | `renata.alves` | `Prova@123` | Ativa |
+| Supervisor — Interior | `diego.costa` | `Prova@123` | Ativa |
+| Supervisor — Interior | `sergio.lima` | `Prova@123` | **Inativa** (teste de bloqueio) |
+
+**Atenção:** a senha `Prova@123` é pública e se destina exclusivamente à demonstração. Não a reutilize em sistemas reais.
+
+### 6. Confirme os dados de demonstração
+
+O seed inclui **3 regiões, 11 lojas, 6 usuários, 5 categorias, 15 itens de checklist e 15 inspeções demonstrativas** (12 concluídas e 3 rascunhos), distribuídas entre junho e outubro de 2026.
+
+```bash
+docker compose exec db psql -U passocerto_user -d passocerto \
+  -c "SELECT status, COUNT(*) FROM inspecoes GROUP BY status ORDER BY status;"
+```
+
+Resultado esperado para um banco inicializado sem alterações posteriores:
+
+```text
+  status   | count
+-----------+-------
+ CONCLUIDA |    12
+ RASCUNHO  |     3
+```
+
+As inspeções são **dados fictícios**, úteis para validar o histórico, a visualização de pendências e os indicadores do dashboard.
+
+### 7. Pare ou reinicie os serviços
+
+```bash
+# Parar e remover containers sem excluir o banco
+docker compose down
+
+# Iniciar novamente
+docker compose up -d
+```
+
+O banco permanece salvo no volume Docker `postgres_data` gerenciado pelo Compose.
+
+> ⚠️ **Apaga os dados do banco Docker:** `docker compose down -v`. Use somente se quiser eliminar o volume desse projeto e começar uma base de demonstração do zero.
+
+---
+
+## 🧭 Roteiro sugerido para avaliação
+
+Depois de iniciar o sistema:
+
+1. **Administrador:** entre como `carla.nunes` e acesse os cadastros de regiões, lojas, usuários, vínculos regionais, categorias e itens do checklist.
+2. **Supervisor:** entre como `paulo.mendes` e consulte as inspeções/lojas de sua região. Crie uma inspeção, preencha respostas e salve um rascunho.
+3. **Conclusão:** responda aos itens obrigatórios, informe observação nos itens `PENDENTE` e conclua a inspeção para visualizar seu percentual.
+4. **Diretoria:** entre como `helena.prado` e consulte os indicadores e a evolução histórica.
+5. **Controle de acesso:** tente entrar com `sergio.lima` (usuário inativo) e verifique o bloqueio; observe também as restrições de acesso dos perfis.
+
+Os dados demonstrativos do seed permitem explorar a aplicação mesmo antes de criar inspeções manualmente.
 
 ## ✨ Funcionalidades
 
 ### Autenticação e autorização
 
-- Login com usuário e senha.
-- Senhas armazenadas por meio de hash.
-- Autenticação baseada em cookies.
-- Controle de acesso por perfil.
-- Proteção das páginas administrativas.
-- Restrição de acesso a usuários inativos.
+- Autenticação com cookies do ASP.NET Core.
+- Senhas armazenadas como hash BCrypt.
+- Perfis `SUPERVISOR`, `DIRETORIA` e `ADMINISTRADOR`.
+- Acesso a páginas e operações de acordo com o perfil e os vínculos regionais.
+- Bloqueio de contas inativas.
 
-### Gerenciamento de inspeções
+### Inspeções e checklist
 
-- Criação de inspeções para lojas autorizadas.
-- Registro da data da visita.
-- Checklist dividido em categorias.
-- Respostas `OK`, `PENDENTE` e `NA`.
-- Registro de observações para pendências.
-- Salvamento de inspeções em rascunho.
-- Conclusão após preenchimento obrigatório.
-- Cálculo automático do percentual de realização.
-- Preservação dos dados históricos das inspeções concluídas.
-
-### Histórico de inspeções
-
-- Consulta de inspeções realizadas.
-- Filtros para localização de registros.
-- Visualização de detalhes e respostas.
-- Identificação de pendências.
-- Consulta de resultados anteriores.
-
-### Dashboard
-
-- Indicadores de inspeções.
-- Percentuais de realização.
-- Acompanhamento de pendências.
-- Análise por loja e região.
-- Visualização de informações conforme as permissões do usuário.
-- Acompanhamento da evolução mensal dos resultados.
+- Seleção de loja e registro da data de visita.
+- Checklist organizado por categorias e itens.
+- Respostas `OK`, `PENDENTE` e `NA` (*não aplicável*).
+- Observação obrigatória para respostas `PENDENTE`.
+- Salvamento de inspeções como rascunho e conclusão posterior.
+- Registro de snapshots do checklist na inspeção, preservando os dados históricos.
+- Histórico de inspeções e filtros para consulta.
+- Indicadores e acompanhamento da evolução mensal.
 
 ### Administração
 
-O perfil de administrador possui funcionalidades de gerenciamento de:
+- Cadastro, edição e desativação lógica de regiões e lojas.
+- Gerenciamento de usuários e seus vínculos com regiões.
+- Gerenciamento de categorias e itens do checklist.
+- Restrições de integridade para preservar inspeções existentes.
 
-- Regiões.
-- Lojas.
-- Usuários.
-- Vínculos entre supervisores e regiões.
-- Categorias do checklist.
-- Itens do checklist.
+### Cálculo do percentual de realização
 
-Os cadastros utilizam desativação lógica para preservar a integridade referencial e os registros históricos.
-
-## 👥 Perfis de acesso
-
-O sistema possui três perfis principais.
-
-| Perfil | Permissões |
-|---|---|
-| `SUPERVISOR` | Realizar e consultar inspeções das regiões autorizadas |
-| `DIRETORIA` | Consultar indicadores e informações gerenciais |
-| `ADMINISTRADOR` | Gerenciar cadastros e configurações administrativas |
-
-Os supervisores são associados às regiões por meio da tabela `usuarios_regioes`.
-
-Dessa forma, as operações sobre lojas e inspeções devem respeitar os vínculos regionais do usuário autenticado.
-
-## 🧮 Cálculo do percentual de realização
-
-Cada item do checklist pode receber uma das seguintes respostas:
-
-| Resposta | Significado |
-|---|---|
-| `OK` | Item em conformidade |
-| `PENDENTE` | Item que necessita de correção |
-| `NA` | Item não aplicável à inspeção |
-
-O percentual é calculado utilizando apenas os itens `OK` e `PENDENTE`.
-
-**Fórmula:**
-
-\[
-\text{Realização (\%)} =
-\frac{\text{Quantidade de OK}}
-{\text{Quantidade de OK}+\text{Quantidade de PENDENTE}}
-\times 100
-\]
-
-**Exemplo:**
-
-Uma inspeção possui:
-
-- 8 itens `OK`.
-- 2 itens `PENDENTE`.
-- 3 itens `NA`.
-
-O percentual será:
-
-\[
-\frac{8}{8+2}\times100=80\%
-\]
-
-Itens `NA` são desconsiderados no cálculo.
-
-Quando não existem itens `OK` ou `PENDENTE`, o percentual é representado como `NULL`, pois não há elementos aplicáveis suficientes para calcular o indicador.
-
-## 🏗️ Arquitetura
-
-A aplicação foi organizada em camadas para separar responsabilidades.
+O indicador considera apenas respostas `OK` e `PENDENTE`:
 
 ```text
-Razor Pages
-     │
-     ▼
-Services
-     │
-     ▼
-Repositories / Npgsql
-     │
-     ▼
-PostgreSQL
+Percentual = 100 × Quantidade de OK / (Quantidade de OK + Quantidade de PENDENTE)
 ```
 
-### Razor Pages
+Por exemplo, com 8 `OK`, 2 `PENDENTE` e 3 `NA`, o resultado é **80%**. As respostas `NA` não entram no denominador. Se não houver itens `OK` nem `PENDENTE`, o percentual é `NULL` (não calculável).
 
-Responsáveis pela apresentação das páginas, recebimento dos dados dos formulários e tratamento das requisições HTTP.
+## 🏗️ Arquitetura e tecnologias
 
-### Services
-
-Responsáveis pela implementação das regras de negócio, validações e coordenação das operações.
-
-### Repositories
-
-Responsáveis pelo acesso aos dados por meio do Npgsql e de comandos SQL parametrizados.
-
-### Models e DTOs
-
-Representam as entidades do sistema e os objetos utilizados para transferência e validação de dados.
-
-### Autorização
-
-O ASP.NET Core utiliza autenticação por cookies e políticas de autorização para restringir o acesso às funcionalidades.
-
-## 📂 Organização do projeto
-
-A estrutura principal está organizada da seguinte forma:
+**Fluxo principal:**
 
 ```text
-PassoCerto.Web/
+Navegador
+   ↓
+ASP.NET Core Razor Pages
+   ↓
+Services (regras de negócio)
+   ↓
+Repositories (SQL parametrizado / Npgsql)
+   ↓
+PostgreSQL 18
+```
+
+| Tecnologia | Uso |
+|---|---|
+| C# / .NET 8 | Linguagem e plataforma |
+| ASP.NET Core Razor Pages | Interface e requisições web — sem controllers MVC |
+| PostgreSQL 18 | Persistência relacional |
+| Npgsql | Acesso direto ao banco com SQL parametrizado |
+| BCrypt.Net-Next | Hash de senhas |
+| Cookie Authentication | Sessão e autorização |
+| Bootstrap | Interface responsiva |
+| Docker / Docker Compose | Ambiente reproduzível com aplicação e banco |
+
+**Organização principal do repositório:**
+
+```text
+Passo-Certo/
+├── Exceptions/
 ├── Extensions/
 ├── Models/
-│   ├── Entity/
-│   └── DTOs/
 ├── Pages/
 │   ├── Admin/
-│   │   ├── Regioes/
-│   │   ├── Lojas/
-│   │   ├── Usuarios/
-│   │   ├── Vinculos/
-│   │   └── Checklist/
-│   ├── Auth/
-│   └── ...
+│   └── Auth/
 ├── Repositories/
-│   └── Interfaces/
 ├── Services/
-│   └── Interfaces/
 ├── wwwroot/
 ├── database/
 │   ├── 01_schema.sql
@@ -215,276 +223,99 @@ PassoCerto.Web/
 ├── compose.yaml
 ├── .dockerignore
 ├── .env.example
-├── appsettings.json
-├── Program.cs
 ├── PassoCerto.Web.csproj
+├── Program.cs
 └── README.md
 ```
 
-## 🐳 Executando com Docker (recomendado)
-
-Esta é a maneira recomendada de executar o PassoCerto.
-
-Com Docker Compose, a aplicação e o PostgreSQL são inicializados em containers separados.
-
-### Pré-requisitos
-
-- Docker Engine instalado e funcionando.
-- Docker Compose disponível.
-- Docker Buildx disponível.
-- Git.
-
-Não é necessário instalar .NET ou PostgreSQL diretamente no computador para executar a aplicação pelos containers.
-
-### 1. Clonar o repositório
-
-```bash
-git clone <URL_DO_REPOSITORIO>
-cd PassoCerto.Web
-```
-
-Substitua `<URL_DO_REPOSITORIO>` pelo endereço real do projeto no GitHub.
-
-### 2. Configurar as variáveis de ambiente
-
-Copie o arquivo de exemplo:
-
-```bash
-cp .env.example .env
-```
-
-Abra o arquivo `.env` e configure:
-
-```dotenv
-DB_PASSWORD=sua_senha_forte
-```
-
-O arquivo `.env` contém configurações locais e não deve ser enviado ao repositório.
-
-### 3. Iniciar os containers
-
-Execute:
-
-```bash
-docker compose up --build -d
-```
-
-O Docker Compose realizará as seguintes operações:
-
-1. Construirá a imagem da aplicação ASP.NET Core.
-2. Criará o container PostgreSQL.
-3. Configurará a rede interna dos serviços.
-4. Inicializará o banco de dados.
-5. Executará os scripts SQL de criação e carga inicial.
-6. Inicializará a aplicação web.
-
-### 4. Verificar os containers
-
-```bash
-docker compose ps
-```
-
-Para consultar os logs da aplicação:
-
-```bash
-docker compose logs -f web
-```
-
-Para consultar os logs do PostgreSQL:
-
-```bash
-docker compose logs -f db
-```
-
-### 5. Acessar o sistema
-
-Com os containers em execução, abra:
-
-**http://localhost:8080**
-
-O endereço é destinado ao acesso local no computador onde o Docker está rodando.
-
-### 6. Parar os containers
-
-```bash
-docker compose down
-```
-
-Esse comando remove os containers e a rede, mas mantém o volume de dados do PostgreSQL.
-
-Para iniciar novamente:
-
-```bash
-docker compose up -d
-```
-
-### Persistência dos dados
-
-O PostgreSQL utiliza um volume Docker para armazenar os dados.
-
-Isso permite que os registros sejam preservados mesmo após a remoção e recriação dos containers.
-
-**Atenção:** o comando abaixo remove também o volume de dados:
-
-```bash
-docker compose down -v
-```
-
-Utilize-o apenas quando desejar apagar os dados desse ambiente e recriar o banco a partir dos scripts.
+O projeto utiliza **SQL e Npgsql**, sem migrations do Entity Framework Core. Os arquivos SQL versionados definem a estrutura do banco e seus dados iniciais.
 
 ## 🗄️ Banco de dados
 
-O banco de dados utilizado é o PostgreSQL.
+As principais tabelas são:
 
-O projeto contém scripts SQL para criação da estrutura e inserção dos dados de demonstração.
+- `regioes`, `lojas` e `usuarios`;
+- `usuarios_regioes` (vínculo de supervisores às regiões);
+- `categorias_checklist` e `itens_checklist`;
+- `inspecoes` e `respostas_inspecao`.
 
-| Arquivo | Finalidade |
-|---|---|
-| `database/01_schema.sql` | Criação das tabelas, relacionamentos e restrições |
-| `database/02_seed.sql` | Inserção dos dados iniciais de demonstração |
+O arquivo `database/01_schema.sql` define tabelas, chaves, restrições e índices. O `database/02_seed.sql` insere os dados fictícios, incluindo as inspeções e respostas usadas para demonstrar o dashboard.
 
-### Principais tabelas
+**Importante:** os arquivos SQL em `/docker-entrypoint-initdb.d` são executados **somente na primeira inicialização de um volume de banco vazio**. Alterar `02_seed.sql` e executar apenas `docker compose up` não reaplica os dados a um banco existente. Para preservar dados, aplique mudanças por scripts adequados; para reiniciar um ambiente descartável de teste, faça backup se necessário antes de remover volumes.
 
-- `usuarios`
-- `regioes`
-- `lojas`
-- `usuarios_regioes`
-- `categorias_checklist`
-- `itens_checklist`
-- `inspecoes`
-- `respostas_inspecao`
+## 💻 Execução sem Docker (opcional)
 
-### Inicialização do banco no Docker
+Pré-requisitos: **SDK .NET 8** e **PostgreSQL** acessível.
 
-Na primeira execução, quando o volume do PostgreSQL está vazio, os scripts da pasta `database/` são executados automaticamente em ordem.
+1. Crie um banco `passocerto` e execute `database/01_schema.sql` e `database/02_seed.sql` nessa ordem, usando uma conta que possa criar as tabelas e a extensão `pgcrypto`.
+2. Configure `ConnectionStrings:DefaultConnection` em configuração local não versionada (por exemplo, *User Secrets* ou variável de ambiente). Exemplo de valor, substituindo as credenciais:
 
-Os scripts não são executados novamente quando o volume já contém um banco inicializado.
+   ```text
+   Host=localhost;Port=5432;Database=passocerto;Username=passocerto_user;Password=SENHA_LOCAL
+   ```
 
-O projeto utiliza scripts SQL para a criação e preparação do banco, sem depender de migrations do Entity Framework Core.
+3. Na raiz do repositório:
 
-## 🔑 Usuários de demonstração
+   ```bash
+   dotnet restore
+   dotnet run
+   ```
 
-O script de seed disponibiliza contas para testar os diferentes níveis de acesso.
+4. Abra a URL informada pelo `dotnet run`.
 
-| Login | Perfil | Situação |
-|---|---|---|
-| `paulo.mendes` | SUPERVISOR | Ativo |
-| `renata.alves` | SUPERVISOR | Ativo |
-| `diego.costa` | SUPERVISOR | Ativo |
-| `helena.prado` | DIRETORIA | Ativo |
-| `carla.nunes` | ADMINISTRADOR | Ativo |
-| `sergio.lima` | SUPERVISOR | Inativo |
+A conta local de PostgreSQL precisa ter permissões nas tabelas utilizadas pela aplicação. No Docker, o usuário do banco é configurado durante a própria inicialização.
 
-**Senha das contas de demonstração:**
+## 🧯 Solução de problemas
 
-```text
-Prova@123
-```
+**`docker: unknown command: docker compose`**  
+Instale o plugin/pacote Docker Compose compatível com seu sistema. No Arch Linux, por exemplo: `sudo pacman -S docker-compose docker-buildx`.
 
-Essas credenciais são exclusivamente para o ambiente de demonstração e não devem ser reutilizadas em produção.
+**`permission denied ... /var/run/docker.sock`**  
+Verifique se o Docker Engine está ativo e se sua conta pode utilizá-lo. O grupo `docker` concede privilégios equivalentes aos de administrador; consulte a [documentação oficial de pós-instalação](https://docs.docker.com/engine/install/linux-postinstall/) antes de conceder acesso.
 
-### Vínculos regionais de demonstração
+**`DB_PASSWORD variable is not set`**  
+Confirme que o `.env` está na raiz do repositório, ao lado de `compose.yaml`, e contém `DB_PASSWORD=` com um valor não vazio. Depois execute `docker compose config --quiet`.
 
-| Supervisor | Região |
-|---|---|
-| Paulo Mendes | Litoral |
-| Renata Alves | Metropolitana |
-| Diego Costa | Interior |
-| Sergio Lima | Interior (conta inativa) |
+**`failed to create ... veth ... operation not supported` (Arch Linux)**  
+Pode ocorrer quando o kernel em execução não corresponde aos módulos instalados após uma atualização. Confira `uname -r`, `ls /usr/lib/modules/` e `sudo modprobe veth`; se o kernel foi atualizado, reiniciar o computador pode resolver. Em máquinas virtuais ou containers restritos, revise o suporte a interfaces virtuais.
 
-Os perfis podem ser utilizados para verificar se o sistema aplica corretamente as restrições de acesso.
+**O serviço `db` inicia, mas as tabelas não aparecem**  
+Confira `docker compose logs db`. Os scripts SQL só são executados automaticamente em um volume vazio, e falhas na inicialização aparecem nos logs.
 
-## 🧪 Dados de teste
+**Os dados de demonstração não mudaram após editar o seed**  
+Esse comportamento é esperado com volume persistente. Não apague o volume sem ter certeza de que os dados são descartáveis.
 
-O banco possui dados fictícios para demonstração.
+**O login não mantém a sessão no endereço HTTP local**  
+Confira as configurações de cookie e HTTPS em `Program.cs`, o navegador usado e os logs da aplicação. O projeto configura cookies com `CookieSecurePolicy.Always`; para execução local, o comportamento em `localhost` deve ser validado no navegador. Para exposição pública, configure HTTPS adequadamente.
 
-Entre eles:
+**A porta 8080 já está sendo utilizada**  
+Pare o processo que ocupa a porta ou altere o mapeamento do serviço `web` no `compose.yaml` (por exemplo, `127.0.0.1:8081:8080`) e acesse a porta escolhida.
 
-- Três regiões.
-- Onze lojas.
-- Usuários com diferentes perfis.
-- Cinco categorias de checklist.
-- Quinze itens de verificação.
-- Inspeções demonstrativas com diferentes situações e resultados, quando incluídas no seed.
+## 🔐 Segurança e limitações do ambiente de demonstração
 
-As inspeções de demonstração permitem testar históricos, percentuais de realização, pendências e evolução dos indicadores ao longo do tempo.
+- As contas de demonstração usam credenciais conhecidas publicamente: **não utilize este seed em produção**.
+- O arquivo `.env` deve permanecer fora do Git; a senha do PostgreSQL é definida localmente.
+- O `compose.yaml` foi preparado para **uso local**, com HTTP e ambiente de desenvolvimento.
+- Uma implantação pública exige configuração adequada de HTTPS, cookies, proteção de segredos, backups e políticas de acesso.
+- O PostgreSQL não publica a porta 5432 no host pelo Compose; o acesso da aplicação ocorre pela rede interna.
 
-## 💻 Executando sem Docker
-
-Para executar a aplicação diretamente no ambiente de desenvolvimento, são necessários:
-
-- SDK .NET 8.
-- PostgreSQL.
-- Banco `passocerto` configurado.
-- Connection string válida.
-
-### 1. Restaurar dependências
+## ✅ Como avaliar se a instalação funcionou
 
 ```bash
-dotnet restore
+# Serviços iniciados
+docker compose ps
+
+# Banco com inspeções de demonstração
+docker compose exec db psql -U passocerto_user -d passocerto \
+  -c "SELECT COUNT(*) AS total FROM inspecoes;"
+
+# Logs da aplicação
+docker compose logs --tail=50 web
 ```
 
-### 2. Configurar a conexão
-
-Configure `ConnectionStrings:DefaultConnection` usando o `appsettings.Development.json` local ou uma variável de ambiente.
-
-Exemplo ilustrativo:
-
-```text
-Host=localhost;Port=5432;Database=passocerto;Username=passocerto_user;Password=SENHA_LOCAL
-```
-
-Não armazene senhas reais em arquivos versionados.
-
-### 3. Executar a aplicação
-
-```bash
-dotnet run
-```
-
-O endereço e a porta serão informados no terminal, conforme o perfil de inicialização configurado.
-
-## ✅ Regras de negócio
-
-Entre as regras implementadas ou previstas para validação do sistema, destacam-se:
-
-1. Somente usuários ativos podem acessar o sistema.
-2. Supervisores devem acessar apenas lojas das regiões autorizadas.
-3. A data de visita de uma inspeção não pode ser futura.
-4. Inspeções podem permanecer em rascunho.
-5. Para concluir uma inspeção, todos os itens exigidos devem possuir resposta.
-6. Uma resposta `PENDENTE` exige observação.
-7. Respostas `NA` não participam do cálculo percentual.
-8. Inspeções concluídas não podem ser alteradas.
-9. As informações históricas do checklist devem ser preservadas por snapshots.
-10. Cadastros administrativos devem respeitar as restrições de integridade do banco.
-11. Registros associados a históricos devem ser desativados logicamente, quando aplicável.
-12. O acesso às funcionalidades administrativas é restrito ao perfil `ADMINISTRADOR`.
-
-## 🔐 Segurança
-
-O projeto utiliza mecanismos de segurança como:
-
-- Hash de senhas utilizando BCrypt.
-- Autenticação baseada em cookies.
-- Autorização por perfil e políticas.
-- Validação de dados de entrada.
-- Comandos SQL parametrizados.
-- Restrição regional de acesso.
-- Credenciais do banco configuráveis por variáveis de ambiente.
-
-O ambiente Docker apresentado é destinado a desenvolvimento e avaliação local.
-
-Para uso em produção, seriam necessárias configurações adicionais, como HTTPS, gerenciamento seguro de segredos, configuração de cookies e políticas de infraestrutura.
-
-
-
-## 📄 Contexto acadêmico e técnico
-
-O PassoCerto foi desenvolvido como projeto de avaliação técnica, com foco na aplicação prática de conceitos de desenvolvimento web, programação orientada a objetos, persistência de dados, segurança, regras de negócio e containerização.
-
-O código foi estruturado com o objetivo de facilitar sua compreensão, manutenção e evolução.
+A instalação estará pronta para avaliação quando a página de login carregar em **http://localhost:8080**, uma conta ativa conseguir entrar e as inspeções de demonstração estiverem disponíveis.
 
 ---
 
-**Desenvolvido com C#, ASP.NET Core Razor Pages, PostgreSQL e Docker.**
+**Repositório:** https://github.com/LanaMoraes06/Passo-Certo  
+**Finalidade:** projeto demonstrativo de prova técnica para Desenvolvedor Júnior.
