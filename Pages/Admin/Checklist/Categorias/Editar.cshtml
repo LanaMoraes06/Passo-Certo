@@ -1,0 +1,77 @@
+@page "{id:long}"
+@model PassoCerto.Web.Pages.Admin.Checklist.Categorias.EditarModel
+
+@{
+    ViewData["Title"] = "Editar categoria";
+}
+
+<div class="container py-4">
+
+    <h1 class="h3 fw-bold">Editar categoria</h1>
+
+    <p class="text-muted">
+        Atualize o nome e a ordem da categoria.
+    </p>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+
+            <form method="post">
+
+                <input type="hidden" asp-for="Input.Id" />
+
+                <div asp-validation-summary="ModelOnly"
+                     class="text-danger mb-3"></div>
+
+                <div class="row g-3">
+
+                    <div class="col-md-8">
+                        <label asp-for="Input.Nome"
+                               class="form-label"></label>
+
+                        <input asp-for="Input.Nome"
+                               class="form-control" />
+
+                        <span asp-validation-for="Input.Nome"
+                              class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="Input.Ordem"
+                               class="form-label"></label>
+
+                        <input asp-for="Input.Ordem"
+                               type="number"
+                               min="1"
+                               class="form-control" />
+
+                        <span asp-validation-for="Input.Ordem"
+                              class="text-danger small"></span>
+                    </div>
+
+                </div>
+
+                <div class="d-flex gap-2 mt-4">
+
+                    <button type="submit"
+                            class="btn btn-primary">
+                        Salvar alterações
+                    </button>
+
+                    <a asp-page="/Admin/Checklist/Index"
+                       class="btn btn-outline-secondary">
+                        Cancelar
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

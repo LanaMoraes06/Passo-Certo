@@ -51,6 +51,10 @@ builder.Services.AddScoped<
     IDashboardRepository,
     DashboardRepository>();
 
+builder.Services.AddScoped<
+    IUsuarioRegiaoRepository,
+    UsuarioRegiaoRepository>();
+
 builder.Services.AddScoped<AuthService>();
 
 builder.Services
@@ -95,10 +99,13 @@ builder.Services.AddAuthorizationBuilder()
     
 
     builder.Services.AddScoped<DashboardService>();
-    builder.Services.AddScoped<ChecklistService>();
+    builder.Services.AddScoped<CategoriaChecklistService>();
     builder.Services.AddScoped<InspecaoService>();
     builder.Services.AddScoped<LojaService>();
     builder.Services.AddScoped<RegiaoService>();
+    builder.Services.AddScoped<UsuarioService>();
+    builder.Services.AddScoped<UsuarioRegiaoService>();
+    builder.Services.AddScoped<ItemChecklistService>();
 
 
     

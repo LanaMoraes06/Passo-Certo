@@ -149,7 +149,6 @@ public class ChecklistRepository(NpgsqlDataSource dataSource) : IChecklistReposi
             SET
                 nome = @Nome,
                 ordem = @Ordem,
-                ativo = @Ativo,
                 atualizado_em = NOW()
             WHERE id = @Id
             """;
@@ -163,7 +162,6 @@ public class ChecklistRepository(NpgsqlDataSource dataSource) : IChecklistReposi
         command.Parameters.AddWithValue("Id", categoria.Id);
         command.Parameters.AddWithValue("Nome", categoria.Nome);
         command.Parameters.AddWithValue("Ordem", categoria.Ordem);
-        command.Parameters.AddWithValue("Ativo", categoria.Ativo);
 
         int linhasAfetadas =
             await command.ExecuteNonQueryAsync();
@@ -242,4 +240,221 @@ public class ChecklistRepository(NpgsqlDataSource dataSource) : IChecklistReposi
     {
         throw new NotImplementedException();
     }
+
+    
+    public async Task<bool> ReativarAsync(long id)
+    {
+        const string sql = """
+            UPDATE categorias_checklist
+            SET ativo = TRUE,
+                atualizado_em = NOW()
+            WHERE id = @Id
+              AND ativo = FALSE
+            """;
+
+        await using var connection =
+            await _dataSource.OpenConnectionAsync();
+
+        await using var command =
+            new NpgsqlCommand(sql, connection);
+
+        command.Parameters.AddWithValue("Id", id);
+
+        return await command.ExecuteNonQueryAsync() > 0;
+    }
+
+    public async Task<bool> ExisteNomeCategoriaAsync(
+        string nome,
+        long? ignorarId = null)
+    {
+        const string sql = """
+            SELECT EXISTS (
+                SELECT 1
+                FROM categorias_checklist
+                WHERE LOWER(TRIM(nome)) = LOWER(TRIM(@Nome))
+                  AND (@IgnorarId IS NULL OR id <> @IgnorarId)
+            )
+            """;
+
+        await using var connection =
+            await _dataSource.OpenConnectionAsync();
+
+        await using var command =
+            new NpgsqlCommand(sql, connection);
+
+        command.Parameters.AddWithValue("Nome", nome);
+
+        command.Parameters.Add(
+            "IgnorarId", NpgsqlDbType.Bigint
+        ).Value = (object?)ignorarId ?? DBNull.Value;
+
+        return (bool)(await command.ExecuteScalarAsync() ?? false);
+    }
+
+    public async Task<bool> PossuiItensAtivosAsync(long categoriaId)
+    {
+        const string sql = """
+            SELECT EXISTS (
+                SELECT 1
+                FROM itens_checklist
+                WHERE categoria_id = @CategoriaId
+                  AND ativo = TRUE
+            )
+            """;
+
+         await using var connection =
+            await _dataSource.OpenConnectionAsync();
+
+         await using var command =
+            new NpgsqlCommand(sql, connection);
+
+         command.Parameters.AddWithValue("CategoriaId", categoriaId);
+
+         return (bool)(await command.ExecuteScalarAsync() ?? false);
+    }
+
+
+    public async Task<List<ItemChecklist>> ListarTodosItensAsync()
+    {
+        const string sql = """
+            SELECT id, categoria_id, titulo, descricao,
+                   ordem, ativo, criado_em, atualizado_em
+            FROM itens_checklist
+            ORDER BY categoria_id, ordem, id
+            """;
+
+        var itens = new List<ItemChecklist>();
+
+        await using var connection =
+            await _dataSource.OpenConnectionAsync();
+
+        await using var command =
+            new NpgsqlCommand(sql, connection);
+
+        await using var reader =
+            await command.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
+            itens.Add(MapearItem(reader));
+
+        return itens;
+    }
+
+    public async Task<ItemChecklist?> BuscarItemPorIdAsync(long id)
+    {
+        const string sql = """
+            SELECT id, categoria_id, titulo, descricao,
+                   ordem, ativo, criado_em, atualizado_em
+            FROM itens_checklist
+            WHERE id = @Id
+            """;
+
+        await using var connection =
+            await _dataSource.OpenConnectionAsync();
+
+        await using var command =
+            new NpgsqlCommand(sql, connection);
+
+        command.Parameters.AddWithValue("Id", id);
+
+        await using var reader =
+            await command.ExecuteReaderAsync();
+
+        return await reader.ReadAsync()
+            ? MapearItem(reader)
+            : null;
+    }
+
+    public async Task<long> CriarItemAsync(ItemChecklist item)
+    {
+        const string sql = """
+            INSERT INTO itens_checklist
+                (categoria_id, titulo, descricao, ordem, ativo)
+            VALUES
+                (@CategoriaId, @Titulo, @Descricao, @Ordem, TRUE)
+            RETURNING id
+            """;
+
+        await using var connection =
+            await _dataSource.OpenConnectionAsync();
+
+        await using var command =
+            new NpgsqlCommand(sql, connection);
+
+        command.Parameters.AddWithValue("CategoriaId", item.CategoriaId);
+        command.Parameters.AddWithValue("Titulo", item.Titulo);
+        command.Parameters.AddWithValue("Descricao", item.Descricao);
+        command.Parameters.AddWithValue("Ordem", item.Ordem);
+
+        return Convert.ToInt64(await command.ExecuteScalarAsync());
+    }
+
+    public async Task<bool> AtualizarItemAsync(ItemChecklist item)
+    {
+        const string sql = """
+            UPDATE itens_checklist
+            SET categoria_id = @CategoriaId,
+                titulo = @Titulo,
+                descricao = @Descricao,
+                ordem = @Ordem,
+                atualizado_em = NOW()
+            WHERE id = @Id
+            """;
+
+        await using var connection =
+            await _dataSource.OpenConnectionAsync();
+
+        await using var command =
+            new NpgsqlCommand(sql, connection);
+
+        command.Parameters.AddWithValue("Id", item.Id);
+        command.Parameters.AddWithValue("CategoriaId", item.CategoriaId);
+        command.Parameters.AddWithValue("Titulo", item.Titulo);
+        command.Parameters.AddWithValue("Descricao", item.Descricao);
+        command.Parameters.AddWithValue("Ordem", item.Ordem);
+
+        return await command.ExecuteNonQueryAsync() > 0;
+    }
+
+    public async Task<bool> DesativarItemAsync(long id)
+    {
+        const string sql = """
+            UPDATE itens_checklist
+            SET ativo = FALSE,
+                atualizado_em = NOW()
+            WHERE id = @Id AND ativo = TRUE
+            """;
+
+        await using var connection =
+            await _dataSource.OpenConnectionAsync();
+
+        await using var command =
+            new NpgsqlCommand(sql, connection);
+
+        command.Parameters.AddWithValue("Id", id);
+
+        return await command.ExecuteNonQueryAsync() > 0;
+    }
+
+    public async Task<bool> ReativarItemAsync(long id)
+    {
+        const string sql = """
+            UPDATE itens_checklist
+            SET ativo = TRUE,
+                atualizado_em = NOW()
+            WHERE id = @Id AND ativo = FALSE
+            """;
+
+        await using var connection =
+            await _dataSource.OpenConnectionAsync();
+
+        await using var command =
+            new NpgsqlCommand(sql, connection);
+
+        command.Parameters.AddWithValue("Id", id);
+
+        return await command.ExecuteNonQueryAsync() > 0;
+    }
+
+
 }
