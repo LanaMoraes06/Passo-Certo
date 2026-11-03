@@ -37,7 +37,7 @@ Seu objetivo é oferecer uma solução para padronizar inspeções nas unidades 
 | Bootstrap | Interface responsiva |
 | Docker | Containerização da aplicação |
 | Docker Compose | Orquestração dos serviços |
-| xUnit | Estrutura para testes automatizados |
+
 
 O acesso ao banco é realizado por meio de consultas SQL parametrizadas, sem dependência do Entity Framework Core para as operações de persistência.
 
