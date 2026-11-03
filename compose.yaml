@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: passocerto
+      POSTGRES_USER: passocerto_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Configure DB_PASSWORD no .env}
+
+    volumes:
+      - postgres_data:/var/lib/postgresql
+      - ./database/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ./database/02_seed.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U passocerto_user -d passocerto"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    restart: unless-stopped
+
+    ports:
+      - "127.0.0.1:8080:8080"
+
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=passocerto;Username=passocerto_user;Password=${DB_PASSWORD}"
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
