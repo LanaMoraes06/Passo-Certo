@@ -477,26 +477,6 @@ O ambiente Docker apresentado é destinado a desenvolvimento e avaliação local
 
 Para uso em produção, seriam necessárias configurações adicionais, como HTTPS, gerenciamento seguro de segredos, configuração de cookies e políticas de infraestrutura.
 
-## 🧪 Testes
-
-O projeto possui estrutura de testes baseada em xUnit.
-
-Para executar os testes disponíveis, utilize:
-
-```bash
-dotnet test
-```
-
-Os testes devem verificar, principalmente:
-
-- Validações de regras de negócio.
-- Controle de acesso.
-- Restrições regionais.
-- Cálculo dos percentuais de realização.
-- Comportamento de inspeções concluídas.
-- Operações de gerenciamento administrativo.
-
-A execução do comando não pressupõe cobertura completa; a quantidade de testes efetivamente implementados pode ser consultada na saída do `dotnet test`.
 
 
 ## 📄 Contexto acadêmico e técnico
