@@ -1,598 +1,510 @@
-# PassoCerto — Sistema de Gestão de Inspeções
+# 👟 PassoCerto — Sistema de Inspeções de Lojas
 
-Aplicação web desenvolvida em **C# com ASP.NET Core Razor Pages (.NET 8)** e **PostgreSQL** para registrar, acompanhar e consultar inspeções de lojas de uma rede varejista de calçados.
+Sistema web desenvolvido em **ASP.NET Core 8 com Razor Pages**, voltado ao gerenciamento de inspeções operacionais em lojas de varejo.
 
-O projeto foi desenvolvido como prova técnica de **Desenvolvedor(a) .NET Júnior**, com foco em regras de negócio, autorização por perfil e abrangência regional, integridade histórica e consultas SQL escritas manualmente.
+O projeto permite que supervisores realizem inspeções por meio de checklists, acompanhem pendências e consultem históricos. A diretoria pode visualizar indicadores de desempenho, enquanto administradores gerenciam usuários, regiões, lojas e itens do checklist.
 
-> **Escopo:** esta documentação descreve o funcionamento principal e a configuração local. Funcionalidades extras ou em desenvolvimento devem ser verificadas no código da versão clonada. As instruções de banco dependem dos scripts `.sql` efetivamente presentes em `database/`.
+A aplicação utiliza PostgreSQL para persistência de dados, Npgsql para acesso ao banco e Docker Compose para facilitar a execução do ambiente.
 
-## 1. Funcionalidades
+## 📋 Sobre o projeto
 
-- Login com autenticação por **cookie** e validação de credenciais.
-- Controle de acesso por perfil: **SUPERVISOR**, **DIRETORIA** e **ADMINISTRADOR** (funcionalidades administrativas de manutenção de cadastros são bônus, caso implementadas).
-- Restrições por região para supervisores.
-- Consulta de lojas disponíveis conforme o perfil.
-- Criação de inspeções em **RASCUNHO**, com checklist de itens ativos no momento da criação.
-- Respostas por item: **OK**, **PENDENTE** ou **NA** (não aplicável).
-- Observação obrigatória para itens com resposta **PENDENTE**.
-- Salvamento parcial e posterior conclusão de inspeções.
-- Somente o autor pode modificar a própria inspeção, e apenas enquanto ela estiver em rascunho.
-- Inspeções concluídas disponíveis para consulta, sem edição.
-- Preservação de dados históricos da visita e dos itens do checklist (*snapshots*).
-- Histórico de inspeções, com filtros e paginação.
-- Dashboard com totais, percentuais, pendências e agrupamentos por região.
-- Interface responsiva com Razor Pages e Bootstrap.
+O PassoCerto foi desenvolvido como parte de uma prova técnica para Desenvolvedor Júnior.
 
-### Cálculo do percentual
+Seu objetivo é oferecer uma solução para padronizar inspeções nas unidades de uma rede varejista, garantindo rastreabilidade, controle de acesso e acompanhamento dos resultados.
 
-O percentual de realização da inspeção concluída é:
+### Objetivos
 
-```text
-Percentual = OK / (OK + PENDENTE) × 100
-```
+- Digitalizar as inspeções operacionais das lojas.
+- Organizar os itens de inspeção em categorias.
+- Registrar conformidades e pendências.
+- Restringir o acesso conforme o perfil do usuário.
+- Preservar o histórico das inspeções concluídas.
+- Disponibilizar indicadores gerenciais.
+- Facilitar a implantação por meio do Docker.
 
-Respostas `NA` não entram no cálculo. Se `OK + PENDENTE = 0`, o percentual é **não calculável** e deve ser apresentado como `—`.
+## 🛠️ Tecnologias utilizadas
 
-## 2. Tecnologias
+| Tecnologia | Finalidade |
+|---|---|
+| C# | Linguagem de programação |
+| .NET 8 | Plataforma de desenvolvimento |
+| ASP.NET Core Razor Pages | Interface web e processamento das requisições |
+| PostgreSQL 18 | Banco de dados relacional |
+| Npgsql | Acesso ao PostgreSQL |
+| SQL | Consultas e operações de persistência |
+| BCrypt | Hash de senhas |
+| Cookie Authentication | Autenticação dos usuários |
+| Bootstrap | Interface responsiva |
+| Docker | Containerização da aplicação |
+| Docker Compose | Orquestração dos serviços |
+| xUnit | Estrutura para testes automatizados |
 
-| Tecnologia | Utilização |
-| --- | --- |
-| C# / .NET 8 | Linguagem e plataforma |
-| ASP.NET Core Razor Pages | Páginas e formulários web; sem Controllers MVC |
-| PostgreSQL 14+ | Banco de dados relacional |
-| Npgsql | Execução manual de SQL, parâmetros e leitura de resultados |
-| Npgsql.DependencyInjection | Integração do Npgsql com injeção de dependência |
-| BCrypt.Net-Next | Verificação de hashes de senha |
-| Bootstrap | Componentes visuais e layout responsivo |
-| Git | Controle de versão |
+O acesso ao banco é realizado por meio de consultas SQL parametrizadas, sem dependência do Entity Framework Core para as operações de persistência.
 
-O arquivo `PassoCerto.Web.csproj` define `net8.0` e as dependências NuGet necessárias. A restauração delas é feita com `dotnet restore`; não é preciso instalar cada pacote manualmente.
+## ✨ Funcionalidades
 
-**Importante:** o projeto não utiliza Entity Framework, NHibernate ou migrations de ORM. A modelagem e a carga inicial do banco são feitas por scripts SQL.
+### Autenticação e autorização
 
-## 3. Pré-requisitos
+- Login com usuário e senha.
+- Senhas armazenadas por meio de hash.
+- Autenticação baseada em cookies.
+- Controle de acesso por perfil.
+- Proteção das páginas administrativas.
+- Restrição de acesso a usuários inativos.
 
-Para executar localmente:
+### Gerenciamento de inspeções
 
-1. **Git**, para clonar o repositório.
-2. **SDK do .NET 8**, e não apenas o Runtime.
-3. **PostgreSQL 14 ou superior**, em execução e acessível.
-4. Ferramenta para executar scripts SQL: `psql` ou DBeaver/pgAdmin.
-5. Navegador web atualizado.
-6. Acesso à internet na primeira execução para restaurar os pacotes NuGet.
+- Criação de inspeções para lojas autorizadas.
+- Registro da data da visita.
+- Checklist dividido em categorias.
+- Respostas `OK`, `PENDENTE` e `NA`.
+- Registro de observações para pendências.
+- Salvamento de inspeções em rascunho.
+- Conclusão após preenchimento obrigatório.
+- Cálculo automático do percentual de realização.
+- Preservação dos dados históricos das inspeções concluídas.
 
-> Instale o **SDK 8.x**. Mesmo que você já tenha versões mais recentes do SDK, confirme que o ambiente consegue executar projetos `net8.0` com `dotnet --list-sdks` e `dotnet --list-runtimes`.
+### Histórico de inspeções
 
-## 4. Instalação do .NET 8 — passo a passo
+- Consulta de inspeções realizadas.
+- Filtros para localização de registros.
+- Visualização de detalhes e respostas.
+- Identificação de pendências.
+- Consulta de resultados anteriores.
 
-### 4.1 Windows 10/11
+### Dashboard
 
-**Opção A — instalador oficial (recomendada para iniciantes)**
+- Indicadores de inspeções.
+- Percentuais de realização.
+- Acompanhamento de pendências.
+- Análise por loja e região.
+- Visualização de informações conforme as permissões do usuário.
+- Acompanhamento da evolução mensal dos resultados.
 
-1. Abra **https://dotnet.microsoft.com/download/dotnet/8.0**.
-2. Localize **SDK 8.0** (não escolha somente ASP.NET Core Runtime).
-3. Baixe o instalador correspondente à arquitetura do seu Windows, normalmente **x64**.
-4. Execute o `.exe` e conclua a instalação.
-5. Feche e reabra o PowerShell ou terminal do VS Code.
-6. Confirme:
+### Administração
 
-```powershell
-dotnet --info
-dotnet --list-sdks
-dotnet --list-runtimes
-```
+O perfil de administrador possui funcionalidades de gerenciamento de:
 
-A lista de SDKs deverá incluir uma entrada `8.0.xxx`; a de runtimes deverá incluir `Microsoft.AspNetCore.App 8.0.x`.
+- Regiões.
+- Lojas.
+- Usuários.
+- Vínculos entre supervisores e regiões.
+- Categorias do checklist.
+- Itens do checklist.
 
-**Opção B — PowerShell com winget**
+Os cadastros utilizam desativação lógica para preservar a integridade referencial e os registros históricos.
 
-```powershell
-winget install --id Microsoft.DotNet.SDK.8 --exact
-```
+## 👥 Perfis de acesso
 
-Feche e abra o terminal e execute os comandos de verificação acima.
+O sistema possui três perfis principais.
 
-Documentação: https://learn.microsoft.com/dotnet/core/install/windows
+| Perfil | Permissões |
+|---|---|
+| `SUPERVISOR` | Realizar e consultar inspeções das regiões autorizadas |
+| `DIRETORIA` | Consultar indicadores e informações gerenciais |
+| `ADMINISTRADOR` | Gerenciar cadastros e configurações administrativas |
 
-### 4.2 Ubuntu
+Os supervisores são associados às regiões por meio da tabela `usuarios_regioes`.
 
-No Ubuntu com o pacote disponível nos repositórios configurados:
+Dessa forma, as operações sobre lojas e inspeções devem respeitar os vínculos regionais do usuário autenticado.
 
-```bash
-sudo apt update
-sudo apt install -y dotnet-sdk-8.0
+## 🧮 Cálculo do percentual de realização
 
-dotnet --info
-dotnet --list-sdks
-dotnet --list-runtimes
-```
+Cada item do checklist pode receber uma das seguintes respostas:
 
-Se o pacote não for encontrado, consulte as instruções específicas da sua versão do Ubuntu: https://learn.microsoft.com/dotnet/core/install/linux-ubuntu-install. Não misture repositórios de diferentes versões do Ubuntu.
+| Resposta | Significado |
+|---|---|
+| `OK` | Item em conformidade |
+| `PENDENTE` | Item que necessita de correção |
+| `NA` | Item não aplicável à inspeção |
 
-### 4.3 Arch Linux
+O percentual é calculado utilizando apenas os itens `OK` e `PENDENTE`.
 
-Confirme a disponibilidade do pacote da versão 8 no repositório configurado:
+**Fórmula:**
 
-```bash
-sudo pacman -Syu
-pacman -Ss dotnet-sdk
-```
+\[
+\text{Realização (\%)} =
+\frac{\text{Quantidade de OK}}
+{\text{Quantidade de OK}+\text{Quantidade de PENDENTE}}
+\times 100
+\]
 
-Se `dotnet-sdk-8.0` estiver disponível:
+**Exemplo:**
 
-```bash
-sudo pacman -S dotnet-sdk-8.0 aspnet-runtime-8.0
+Uma inspeção possui:
 
-dotnet --info
-dotnet --list-sdks
-dotnet --list-runtimes
-```
+- 8 itens `OK`.
+- 2 itens `PENDENTE`.
+- 3 itens `NA`.
 
-Confirme que `dotnet --list-runtimes` inclui `Microsoft.AspNetCore.App 8.0.x` (além do runtime .NET). Se a versão 8 não estiver disponível pelo gerenciador de pacotes, siga o método oficial de instalação manual do SDK 8 para Linux: https://learn.microsoft.com/dotnet/core/install/linux. Evite misturar instalações manuais e de pacotes sem revisar `PATH` e `DOTNET_ROOT`.
+O percentual será:
 
-### 4.4 Verificação independente de sistema operacional
+\[
+\frac{8}{8+2}\times100=80\%
+\]
 
-```bash
-dotnet --version
-dotnet --list-sdks
-dotnet --list-runtimes
-```
+Itens `NA` são desconsiderados no cálculo.
 
-Um resultado como `8.0.xxx` confirma a presença da linha de SDK 8. Se o comando `dotnet` não for reconhecido, reinicie o terminal e verifique a instalação e o `PATH`.
+Quando não existem itens `OK` ou `PENDENTE`, o percentual é representado como `NULL`, pois não há elementos aplicáveis suficientes para calcular o indicador.
 
-## 5. Instalação e configuração do PostgreSQL
+## 🏗️ Arquitetura
 
-### 5.1 Windows
-
-1. Acesse **https://www.postgresql.org/download/windows/**.
-2. Instale uma versão compatível do PostgreSQL (**14 ou superior**).
-3. Durante a instalação, defina uma senha para o superusuário `postgres` e anote a porta escolhida (geralmente `5432`).
-4. Deixe o serviço PostgreSQL ativo.
-5. Utilize o pgAdmin instalado com o PostgreSQL ou o `psql` para executar os comandos da seção seguinte.
-
-Se usar `psql` no PowerShell e o comando não for encontrado, execute-o no **SQL Shell (psql)** instalado com o PostgreSQL ou adicione a pasta `bin` do PostgreSQL ao `PATH`.
-
-### 5.2 Ubuntu
-
-```bash
-sudo apt update
-sudo apt install -y postgresql postgresql-client
-sudo systemctl enable --now postgresql
-sudo systemctl status postgresql
-```
-
-Verifique a versão do servidor:
-
-```bash
-sudo -u postgres psql -c "SHOW server_version;"
-```
-
-> A versão instalada depende dos repositórios do sistema. Confirme que é PostgreSQL 14 ou superior.
-
-### 5.3 Arch Linux
-
-```bash
-sudo pacman -S postgresql
-```
-
-Na primeira instalação, o serviço normalmente exige inicializar o cluster local (use o diretório de dados configurado pelo pacote):
-
-```bash
-sudo -iu postgres
-initdb -D /var/lib/postgres/data --locale=C.UTF-8 --encoding=UTF8
-exit
-sudo systemctl enable --now postgresql
-```
-
-**Não execute `initdb` em um cluster que já contém dados.** Se houver um banco existente ou o diretório já estiver inicializado, apenas configure/inicie o serviço de forma apropriada.
-
-### 5.4 Criar usuário e banco da aplicação
-
-Conecte-se ao PostgreSQL como administrador:
-
-```bash
-# Ubuntu/Arch (autenticação local típica)
-sudo -u postgres psql
-```
-
-No Windows, use o SQL Shell/pgAdmin como `postgres`.
-
-Execute estes SQLs **substituindo a senha de exemplo por uma senha local forte e própria**:
-
-```sql
-CREATE ROLE passocerto_user WITH LOGIN PASSWORD 'ALTERE_ESTA_SENHA_LOCAL';
-CREATE DATABASE passocerto OWNER passocerto_user;
-```
-
-Saia do `psql`:
+A aplicação foi organizada em camadas para separar responsabilidades.
 
 ```text
-\q
-```
-
-**Observações:** se a role ou o banco já existirem, não recrie nem apague dados. Ajuste a configuração para utilizar o banco existente. `CREATE DATABASE` precisa ser executado fora de um bloco de transação explícito.
-
-Teste a conexão:
-
-```bash
-psql -h localhost -p 5432 -U passocerto_user -d passocerto -c "SELECT current_database(), current_user;"
-```
-
-No Windows, se `psql` não estiver no `PATH`, use o SQL Shell ou o DBeaver.
-
-## 6. Clonar o projeto
-
-Instale o Git, caso ainda não tenha: https://git-scm.com/downloads.
-
-No terminal:
-
-```bash
-git clone https://github.com/LanaMoraes06/Passo-Certo.git
-cd Passo-Certo
-```
-
-Confirme que a pasta contém `PassoCerto.Web.csproj`, `Program.cs` e o diretório `database/`.
-
-No Windows (PowerShell), os comandos `git clone` e `cd` são os mesmos.
-
-## 7. Inicializar o banco com os scripts SQL
-
-> **Etapa obrigatória antes de iniciar a aplicação.** O projeto usa scripts versionados em `database/`, não migrations automáticas.
-
-O repositório contém estes scripts, que devem ser executados **nesta ordem**:
-
-1. `database/01_schema.sql` — cria tabelas, relacionamentos, chaves e restrições.
-2. `database/02_seed.sql` — ativa a extensão `pgcrypto` e carrega regiões, lojas, usuários e itens de checklist.
-
-**1. Conecte-se ao banco `passocerto` (não ao banco padrão `postgres`) e execute:**
-
-```bash
-psql -v ON_ERROR_STOP=1 -h localhost -p 5432 -U passocerto_user -d passocerto -f database/01_schema.sql
-psql -v ON_ERROR_STOP=1 -h localhost -p 5432 -U passocerto_user -d passocerto -f database/02_seed.sql
-```
-
-Digite a senha do usuário `passocerto_user` quando solicitada. `ON_ERROR_STOP=1` faz o `psql` parar caso um script falhe; **não prossiga para o seed se o schema falhar**.
-
-> **Nota sobre `pgcrypto`:** o script `02_seed.sql` começa com `CREATE EXTENSION IF NOT EXISTS pgcrypto;`. Se o usuário da aplicação não tiver permissão para instalar a extensão, conecte-se especificamente ao banco `passocerto` com um usuário administrador, execute `CREATE EXTENSION IF NOT EXISTS pgcrypto;` e só depois execute o seed com `passocerto_user`.
-
-No DBeaver: conecte-se a `localhost:5432`, selecione **Database: `passocerto`**, com o usuário `passocerto_user`, abra `01_schema.sql` e execute-o; depois abra e execute `02_seed.sql` na **mesma conexão**.
-
-**2. Confira a conexão antes de consultar as tabelas:**
-
-```bash
-psql -h localhost -p 5432 -U passocerto_user -d passocerto -c "SELECT current_database(), current_user;"
-```
-
-Se preferir usar `sudo -u postgres psql`, informe o banco explicitamente:
-
-```bash
-sudo -u postgres psql -d passocerto
-```
-
-Sem `-d passocerto`, esse comando geralmente conecta no banco padrão **`postgres`**; ali as tabelas do PassoCerto não aparecerão. Em qualquer editor SQL, confirme antes:
-
-```sql
-SELECT current_database(), current_schema();
-```
-
-**3. Verifique as tabelas (conectado ao banco `passocerto`):**
-
-```sql
-SELECT table_name
-FROM information_schema.tables
-WHERE table_schema = 'public'
-ORDER BY table_name;
-```
-
-As tabelas principais esperadas são `usuarios`, `regioes`, `usuarios_regioes`, `lojas`, `categorias_checklist`, `itens_checklist`, `inspecoes` e `respostas_inspecao`.
-
-Confira os dados iniciais:
-
-```sql
-SELECT id, login, perfil, ativo FROM usuarios ORDER BY id;
-SELECT id, codigo, nome, ativo FROM lojas ORDER BY id;
-SELECT COUNT(*) FROM itens_checklist;
-```
-
-> A criação e a carga podem falhar se os arquivos SQL presumirem um proprietário, extensões ou credenciais diferentes. Leia a mensagem do PostgreSQL e ajuste o usuário/permissões ou o ambiente em vez de remover restrições do esquema.
-
-## 8. Configuração da conexão do PassoCerto
-
-No `Program.cs`, a aplicação lê a connection string chamada **`DefaultConnection`** a partir das configurações do ASP.NET Core.
-
-O arquivo `appsettings.json` foi disponibilizado em versão corrigida junto a este README. A chave `ConnectionStrings` deve ficar **na raiz do JSON**, nunca dentro de `Logging`. Não armazene senhas reais em arquivos versionados.
-
-Formato seguro recomendado para o `appsettings.json` do repositório:
-
-```json
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
-    }
-  },
-  "AllowedHosts": "*",
-  "ConnectionStrings": {
-    "DefaultConnection": ""
-  }
-}
-```
-
-A connection string real é fornecida pelo ambiente ou pelo User Secrets, nas opções abaixo. **Substitua o arquivo `appsettings.json` do projeto pelo arquivo corrigido disponibilizado e troque a senha anteriormente publicada**, caso ela tenha sido utilizada fora de um ambiente descartável.
-
-### Opção A — variável de ambiente (recomendada)
-
-Configure a variável `ConnectionStrings__DefaultConnection` no terminal **antes de executar** o aplicativo.
-
-Linux/macOS (bash/zsh):
-
-```bash
-export ConnectionStrings__DefaultConnection='Host=localhost;Port=5432;Database=passocerto;Username=passocerto_user;Password=SUA_SENHA_LOCAL'
-```
-
-PowerShell:
-
-```powershell
-$env:ConnectionStrings__DefaultConnection = 'Host=localhost;Port=5432;Database=passocerto;Username=passocerto_user;Password=SUA_SENHA_LOCAL'
-```
-
-Substitua `SUA_SENHA_LOCAL` pela senha cadastrada no PostgreSQL. O nome do parâmetro com **dois sublinhados `__`** corresponde à chave `ConnectionStrings:DefaultConnection` do sistema de configuração .NET.
-
-A variável precisa estar definida no **mesmo terminal** em que você executar `dotnet run`.
-
-### Opção B — User Secrets (desenvolvimento)
-
-No diretório do projeto, execute:
-
-```bash
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=passocerto;Username=passocerto_user;Password=SUA_SENHA_LOCAL"
-```
-
-O projeto possui um `UserSecretsId` no `.csproj`; o mecanismo é destinado ao ambiente de desenvolvimento e evita precisar colocar a senha diretamente em um arquivo rastreado pelo Git.
-
-**Importante:** arquivos de configuração versionados podem conter valores usados em outros ambientes. Não publique novas senhas, tokens ou credenciais reais no Git. Se credenciais válidas já foram publicadas, troque-as no banco e remova-as do código versionado.
-
-## 9. Restaurar dependências e compilar
-
-Na raiz do repositório, onde está `PassoCerto.Web.csproj`:
-
-```bash
-dotnet restore
-dotnet build
-```
-
-A restauração baixa os pacotes NuGet declarados no projeto. Se a compilação falhar, leia o **primeiro erro** exibido no terminal.
-
-Para verificar os pacotes declarados:
-
-```bash
-dotnet list package
-```
-
-## 10. Executar a aplicação
-
-Com o PostgreSQL ativo, tabelas populadas e conexão configurada:
-
-```bash
-dotnet run
-```
-
-O terminal deve informar algo semelhante a:
-
-```text
-Now listening on: http://localhost:5209
-Application started.
-```
-
-**A porta acima é apenas um exemplo.** Utilize o endereço exibido na sua execução ou confira `Properties/launchSettings.json`.
-
-Abra a URL do terminal no navegador. Se houver perfil HTTPS, prefira a URL `https://localhost:PORTA` e, se necessário, configure o certificado local de desenvolvimento:
-
-```bash
-dotnet dev-certs https --trust
-```
-
-A disponibilidade do comando de confiança automática depende do sistema operacional. A aplicação configura cookies com política de segurança; portanto, confira o uso de HTTPS e o comportamento dos cookies se o login não persistir.
-
-Para interromper o servidor, pressione **Ctrl + C**.
-
-### Executar utilizando um perfil específico
-
-Se o arquivo `Properties/launchSettings.json` tiver perfis nomeados, você pode selecioná-los com:
-
-```bash
-dotnet run --launch-profile NOME_REAL_DO_PERFIL
-```
-
-Consulte o arquivo antes de substituir `NOME_REAL_DO_PERFIL`.
-
-## 11. Usuários de demonstração
-
-O enunciado da prova prevê uma carga inicial de usuários de exemplo. **Use apenas em ambiente de avaliação, com dados fictícios**, e confirme que a versão clonada executou o seed correspondente.
-
-| Login | Perfil | Abrangência |
-| --- | --- | --- |
-| `paulo.mendes` | SUPERVISOR | Litoral |
-| `renata.alves` | SUPERVISOR | Metropolitana |
-| `diego.costa` | SUPERVISOR | Interior |
-| `helena.prado` | DIRETORIA | Todas as regiões |
-| `carla.nunes` | ADMINISTRADOR | Todas as regiões |
-| `sergio.lima` | SUPERVISOR | Interior; usuário inativo |
-
-**Senha de demonstração de todos os usuários listados: `Prova@123`.** Ela é definida pelo `database/02_seed.sql` (hash BCrypt via `pgcrypto`) e deve ser utilizada **somente no ambiente local da prova**. O usuário `sergio.lima` está inativo e não deve conseguir entrar, mesmo com essa senha. Verifique as contas realmente disponíveis com a consulta SQL indicada na seção 7.
-
-### Teste funcional rápido
-
-1. Acesse a página de login.
-2. Entre com `paulo.mendes` / `Prova@123` (supervisor ativo de Litoral).
-3. Abra **Lojas** e confira a abrangência regional.
-4. Clique em **Nova inspeção**, selecione uma loja permitida e uma data.
-5. Preencha alguns itens e **salve o rascunho**.
-6. Reabra a inspeção e confira as respostas salvas.
-7. Responda os demais itens e **conclua**.
-8. Abra o **Histórico** e o **Dashboard**.
-9. Faça login com a Diretoria e confira os dados de todas as regiões, sem permissão para criar inspeções.
-10. Confirme que um usuário inativo não consegue se autenticar.
-
-## 12. Estrutura do projeto
-
-```text
-Passo-Certo/
-├── Exceptions/                  # Exceções de negócio e autorização
-├── Extensions/                  # Métodos auxiliares, incluindo Claims
-├── Models/
-│   ├── Entity/                  # Entidades do domínio
-│   ├── DTOs/                    # Objetos de entrada, saída e filtros
-│   └── Enum/                    # Status, respostas e perfis
-├── Pages/                       # Arquivos .cshtml e PageModels
-│   ├── Auth/                    # Login e logout
-│   ├── Lojas/                   # Consulta de lojas
-│   ├── Inspecoes/               # Criação, histórico e detalhes
-│   ├── Dashboard/               # Indicadores
-│   └── Shared/                  # Layout comum
-├── Repositories/
-│   └── Interfaces/              # Contratos de persistência
-├── Services/                    # Regras de negócio
-├── database/                    # Scripts SQL versionados
-├── wwwroot/                     # CSS, JS e arquivos estáticos
-├── Properties/
-│   └── launchSettings.json      # Perfis de inicialização
-├── Program.cs                   # DI, autenticação e middlewares
-├── PassoCerto.Web.csproj        # Framework e dependências
-├── appsettings.json            # Configuração base
-└── README.md
-```
-
-### Camadas e responsabilidades
-
-```text
-Navegador
-   ↓
-Razor Pages (.cshtml e .cshtml.cs)
-   ↓
-Services (validações e regras de negócio)
-   ↓
-Repositories (SQL parametrizado com Npgsql)
-   ↓
+Razor Pages
+     │
+     ▼
+Services
+     │
+     ▼
+Repositories / Npgsql
+     │
+     ▼
 PostgreSQL
 ```
 
-- **Entity:** representa objetos do domínio, como loja, usuário, inspeção e resposta.
-- **DTO:** representa os dados de uma operação ou consulta, como filtros do histórico ou dados de criação de uma inspeção.
-- **Repository:** executa SQL, lê registros e converte linhas em objetos.
-- **Service:** aplica regras de negócio e controla o fluxo das operações.
-- **PageModel:** lida com requisições HTTP, model binding e respostas para o navegador.
+### Razor Pages
 
-## 13. Modelagem principal do banco
+Responsáveis pela apresentação das páginas, recebimento dos dados dos formulários e tratamento das requisições HTTP.
 
-As entidades principais estão relacionadas da seguinte forma:
+### Services
 
-- `usuarios` ↔ `regioes`: associação muitos-para-muitos via `usuarios_regioes`.
-- `regioes` → `lojas`: uma região contém várias lojas.
-- `usuarios` → `inspecoes`: um usuário pode criar várias inspeções.
-- `lojas` → `inspecoes`: uma loja pode ter várias visitas ao longo do tempo.
-- `categorias_checklist` → `itens_checklist`: uma categoria possui vários itens.
-- `inspecoes` → `respostas_inspecao`: uma inspeção possui várias respostas.
+Responsáveis pela implementação das regras de negócio, validações e coordenação das operações.
 
-As respostas preservam informações históricas (*snapshots*) dos itens. Isso evita que a alteração de um item cadastrado modifique retroativamente uma inspeção já registrada.
+### Repositories
 
-## 14. Autorização e regras importantes
+Responsáveis pelo acesso aos dados por meio do Npgsql e de comandos SQL parametrizados.
 
-| Regra | SUPERVISOR | DIRETORIA | ADMINISTRADOR |
-| --- | --- | --- | --- |
-| Consultar lojas e histórico | Apenas regiões vinculadas | Todas | Todas |
-| Consultar dashboard | Apenas regiões vinculadas | Todas | Todas |
-| Criar inspeção | Sim, em loja autorizada | Não | Não |
-| Editar/concluir rascunho | Somente o próprio | Não | Não |
-| Manutenção administrativa | Não | Não | Bônus, se implementado |
+### Models e DTOs
 
-O controle de acesso não depende apenas de ocultar botões: deve ser verificado nos Services/Repositories e na autorização das páginas. Uma inspeção concluída é somente leitura, e itens/lojas inativos não devem participar de novas inspeções, mas continuam acessíveis no histórico permitido.
+Representam as entidades do sistema e os objetos utilizados para transferência e validação de dados.
 
-## 15. Problemas comuns e soluções
+### Autorização
 
-### `dotnet: command not found` / `dotnet não é reconhecido`
+O ASP.NET Core utiliza autenticação por cookies e políticas de autorização para restringir o acesso às funcionalidades.
 
-O SDK não foi instalado corretamente ou seu diretório não está no `PATH`. Reabra o terminal e execute `dotnet --info`. Confira a instalação da seção 4.
+## 📂 Organização do projeto
 
-### Erro `NETSDK1045` ou SDK incompatível
+A estrutura principal está organizada da seguinte forma:
 
-Confirme o Target Framework `net8.0` e a presença de um SDK compatível com `dotnet --list-sdks`. Instale o SDK 8 quando necessário.
-
-### `Unable to resolve service for type ...`
-
-Uma dependência do Service não foi registrada no contêiner. Confira em `Program.cs` os `AddScoped<Interface, Implementacao>()` e os registros dos Services.
-
-### `password authentication failed for user ...`
-
-A senha da connection string não coincide com a do usuário PostgreSQL. Revise a seção 8 e teste o login com `psql` ou DBeaver.
-
-### `connection refused` / não consegue conectar ao PostgreSQL
-
-Confirme que o serviço está rodando, a porta `5432` está correta e o host é acessível. O PostgreSQL pode estar em outra porta ou servidor.
-
-### `relation "usuarios" does not exist`
-
-Os scripts SQL não foram aplicados no banco correto, ou foram executados em um esquema diferente. Revise a seção 7 e confira `SELECT current_database(), current_schema();`.
-
-### Redirecionamento infinito para `/Auth/Login`
-
-Confira as convenções `AllowAnonymousToPage("/Auth/Login")`, a ordem `UseAuthentication()` antes de `UseAuthorization()` e o cookie/sua URL HTTP ou HTTPS.
-
-### Login funciona, mas a sessão não persiste
-
-Confirme domínio, protocolo e política `Cookie.SecurePolicy`. Se o cookie exigir HTTPS, execute a aplicação pelo endereço HTTPS corretamente configurado.
-
-### Erro `23514` / `ck_resposta_valor`
-
-A resposta enviada não atende à restrição do banco. Os valores aceitos devem ser coerentes com os enums (`OK`, `PENDENTE`, `NA`) e respostas não preenchidas devem ser tratadas como `NULL` quando permitido.
-
-### Erro em `Enum.Parse`
-
-Confirme que os valores gravados em texto no banco correspondem aos membros definidos no enum. Quando apropriado, use conversão que ignore diferença de maiúsculas/minúsculas.
-
-### Porta já utilizada
-
-Consulte `Properties/launchSettings.json`, finalize a instância anterior ou escolha uma URL/porta disponível para iniciar a aplicação.
-
-## 16. Comandos úteis
-
-```bash
-# Restaurar os pacotes
-dotnet restore
-
-# Compilar sem iniciar
-dotnet build
-
-# Executar
-dotnet run
-
-# Listar SDKs instalados
-dotnet --list-sdks
-
-# Listar runtimes instalados
-dotnet --list-runtimes
-
-# Listar dependências NuGet
-dotnet list package
-
-# Limpar saídas locais de build
-dotnet clean
-
-# Conferir alterações antes de enviar ao Git
-git status
+```text
+PassoCerto.Web/
+├── Extensions/
+├── Models/
+│   ├── Entity/
+│   └── DTOs/
+├── Pages/
+│   ├── Admin/
+│   │   ├── Regioes/
+│   │   ├── Lojas/
+│   │   ├── Usuarios/
+│   │   ├── Vinculos/
+│   │   └── Checklist/
+│   ├── Auth/
+│   └── ...
+├── Repositories/
+│   └── Interfaces/
+├── Services/
+│   └── Interfaces/
+├── wwwroot/
+├── database/
+│   ├── 01_schema.sql
+│   └── 02_seed.sql
+├── Dockerfile
+├── compose.yaml
+├── .dockerignore
+├── .env.example
+├── appsettings.json
+├── Program.cs
+├── PassoCerto.Web.csproj
+└── README.md
 ```
 
-## 17. Referências
+## 🐳 Executando com Docker (recomendado)
 
-- Repositório: https://github.com/LanaMoraes06/Passo-Certo
-- .NET 8: https://dotnet.microsoft.com/download/dotnet/8.0
-- Instalação .NET no Windows: https://learn.microsoft.com/dotnet/core/install/windows
-- Instalação .NET no Ubuntu: https://learn.microsoft.com/dotnet/core/install/linux-ubuntu-install
-- ASP.NET Core Razor Pages: https://learn.microsoft.com/aspnet/core/razor-pages/
-- Npgsql: https://www.npgsql.org/doc/
-- PostgreSQL: https://www.postgresql.org/download/
+Esta é a maneira recomendada de executar o PassoCerto.
+
+Com Docker Compose, a aplicação e o PostgreSQL são inicializados em containers separados.
+
+### Pré-requisitos
+
+- Docker Engine instalado e funcionando.
+- Docker Compose disponível.
+- Docker Buildx disponível.
+- Git.
+
+Não é necessário instalar .NET ou PostgreSQL diretamente no computador para executar a aplicação pelos containers.
+
+### 1. Clonar o repositório
+
+```bash
+git clone <URL_DO_REPOSITORIO>
+cd PassoCerto.Web
+```
+
+Substitua `<URL_DO_REPOSITORIO>` pelo endereço real do projeto no GitHub.
+
+### 2. Configurar as variáveis de ambiente
+
+Copie o arquivo de exemplo:
+
+```bash
+cp .env.example .env
+```
+
+Abra o arquivo `.env` e configure:
+
+```dotenv
+DB_PASSWORD=sua_senha_forte
+```
+
+O arquivo `.env` contém configurações locais e não deve ser enviado ao repositório.
+
+### 3. Iniciar os containers
+
+Execute:
+
+```bash
+docker compose up --build -d
+```
+
+O Docker Compose realizará as seguintes operações:
+
+1. Construirá a imagem da aplicação ASP.NET Core.
+2. Criará o container PostgreSQL.
+3. Configurará a rede interna dos serviços.
+4. Inicializará o banco de dados.
+5. Executará os scripts SQL de criação e carga inicial.
+6. Inicializará a aplicação web.
+
+### 4. Verificar os containers
+
+```bash
+docker compose ps
+```
+
+Para consultar os logs da aplicação:
+
+```bash
+docker compose logs -f web
+```
+
+Para consultar os logs do PostgreSQL:
+
+```bash
+docker compose logs -f db
+```
+
+### 5. Acessar o sistema
+
+Com os containers em execução, abra:
+
+**http://localhost:8080**
+
+O endereço é destinado ao acesso local no computador onde o Docker está rodando.
+
+### 6. Parar os containers
+
+```bash
+docker compose down
+```
+
+Esse comando remove os containers e a rede, mas mantém o volume de dados do PostgreSQL.
+
+Para iniciar novamente:
+
+```bash
+docker compose up -d
+```
+
+### Persistência dos dados
+
+O PostgreSQL utiliza um volume Docker para armazenar os dados.
+
+Isso permite que os registros sejam preservados mesmo após a remoção e recriação dos containers.
+
+**Atenção:** o comando abaixo remove também o volume de dados:
+
+```bash
+docker compose down -v
+```
+
+Utilize-o apenas quando desejar apagar os dados desse ambiente e recriar o banco a partir dos scripts.
+
+## 🗄️ Banco de dados
+
+O banco de dados utilizado é o PostgreSQL.
+
+O projeto contém scripts SQL para criação da estrutura e inserção dos dados de demonstração.
+
+| Arquivo | Finalidade |
+|---|---|
+| `database/01_schema.sql` | Criação das tabelas, relacionamentos e restrições |
+| `database/02_seed.sql` | Inserção dos dados iniciais de demonstração |
+
+### Principais tabelas
+
+- `usuarios`
+- `regioes`
+- `lojas`
+- `usuarios_regioes`
+- `categorias_checklist`
+- `itens_checklist`
+- `inspecoes`
+- `respostas_inspecao`
+
+### Inicialização do banco no Docker
+
+Na primeira execução, quando o volume do PostgreSQL está vazio, os scripts da pasta `database/` são executados automaticamente em ordem.
+
+Os scripts não são executados novamente quando o volume já contém um banco inicializado.
+
+O projeto utiliza scripts SQL para a criação e preparação do banco, sem depender de migrations do Entity Framework Core.
+
+## 🔑 Usuários de demonstração
+
+O script de seed disponibiliza contas para testar os diferentes níveis de acesso.
+
+| Login | Perfil | Situação |
+|---|---|---|
+| `paulo.mendes` | SUPERVISOR | Ativo |
+| `renata.alves` | SUPERVISOR | Ativo |
+| `diego.costa` | SUPERVISOR | Ativo |
+| `helena.prado` | DIRETORIA | Ativo |
+| `carla.nunes` | ADMINISTRADOR | Ativo |
+| `sergio.lima` | SUPERVISOR | Inativo |
+
+**Senha das contas de demonstração:**
+
+```text
+Prova@123
+```
+
+Essas credenciais são exclusivamente para o ambiente de demonstração e não devem ser reutilizadas em produção.
+
+### Vínculos regionais de demonstração
+
+| Supervisor | Região |
+|---|---|
+| Paulo Mendes | Litoral |
+| Renata Alves | Metropolitana |
+| Diego Costa | Interior |
+| Sergio Lima | Interior (conta inativa) |
+
+Os perfis podem ser utilizados para verificar se o sistema aplica corretamente as restrições de acesso.
+
+## 🧪 Dados de teste
+
+O banco possui dados fictícios para demonstração.
+
+Entre eles:
+
+- Três regiões.
+- Onze lojas.
+- Usuários com diferentes perfis.
+- Cinco categorias de checklist.
+- Quinze itens de verificação.
+- Inspeções demonstrativas com diferentes situações e resultados, quando incluídas no seed.
+
+As inspeções de demonstração permitem testar históricos, percentuais de realização, pendências e evolução dos indicadores ao longo do tempo.
+
+## 💻 Executando sem Docker
+
+Para executar a aplicação diretamente no ambiente de desenvolvimento, são necessários:
+
+- SDK .NET 8.
+- PostgreSQL.
+- Banco `passocerto` configurado.
+- Connection string válida.
+
+### 1. Restaurar dependências
+
+```bash
+dotnet restore
+```
+
+### 2. Configurar a conexão
+
+Configure `ConnectionStrings:DefaultConnection` usando o `appsettings.Development.json` local ou uma variável de ambiente.
+
+Exemplo ilustrativo:
+
+```text
+Host=localhost;Port=5432;Database=passocerto;Username=passocerto_user;Password=SENHA_LOCAL
+```
+
+Não armazene senhas reais em arquivos versionados.
+
+### 3. Executar a aplicação
+
+```bash
+dotnet run
+```
+
+O endereço e a porta serão informados no terminal, conforme o perfil de inicialização configurado.
+
+## ✅ Regras de negócio
+
+Entre as regras implementadas ou previstas para validação do sistema, destacam-se:
+
+1. Somente usuários ativos podem acessar o sistema.
+2. Supervisores devem acessar apenas lojas das regiões autorizadas.
+3. A data de visita de uma inspeção não pode ser futura.
+4. Inspeções podem permanecer em rascunho.
+5. Para concluir uma inspeção, todos os itens exigidos devem possuir resposta.
+6. Uma resposta `PENDENTE` exige observação.
+7. Respostas `NA` não participam do cálculo percentual.
+8. Inspeções concluídas não podem ser alteradas.
+9. As informações históricas do checklist devem ser preservadas por snapshots.
+10. Cadastros administrativos devem respeitar as restrições de integridade do banco.
+11. Registros associados a históricos devem ser desativados logicamente, quando aplicável.
+12. O acesso às funcionalidades administrativas é restrito ao perfil `ADMINISTRADOR`.
+
+## 🔐 Segurança
+
+O projeto utiliza mecanismos de segurança como:
+
+- Hash de senhas utilizando BCrypt.
+- Autenticação baseada em cookies.
+- Autorização por perfil e políticas.
+- Validação de dados de entrada.
+- Comandos SQL parametrizados.
+- Restrição regional de acesso.
+- Credenciais do banco configuráveis por variáveis de ambiente.
+
+O ambiente Docker apresentado é destinado a desenvolvimento e avaliação local.
+
+Para uso em produção, seriam necessárias configurações adicionais, como HTTPS, gerenciamento seguro de segredos, configuração de cookies e políticas de infraestrutura.
+
+## 🧪 Testes
+
+O projeto possui estrutura de testes baseada em xUnit.
+
+Para executar os testes disponíveis, utilize:
+
+```bash
+dotnet test
+```
+
+Os testes devem verificar, principalmente:
+
+- Validações de regras de negócio.
+- Controle de acesso.
+- Restrições regionais.
+- Cálculo dos percentuais de realização.
+- Comportamento de inspeções concluídas.
+- Operações de gerenciamento administrativo.
+
+A execução do comando não pressupõe cobertura completa; a quantidade de testes efetivamente implementados pode ser consultada na saída do `dotnet test`.
+
+
+## 📄 Contexto acadêmico e técnico
+
+O PassoCerto foi desenvolvido como projeto de avaliação técnica, com foco na aplicação prática de conceitos de desenvolvimento web, programação orientada a objetos, persistência de dados, segurança, regras de negócio e containerização.
+
+O código foi estruturado com o objetivo de facilitar sua compreensão, manutenção e evolução.
 
 ---
 
-**Nota de segurança:** o repositório deve manter fora do controle de versão as senhas reais e os arquivos de segredo local. O README apresenta marcadores para que cada avaliador utilize sua própria configuração. Não utilize credenciais de demonstração em produção.
+**Desenvolvido com C#, ASP.NET Core Razor Pages, PostgreSQL e Docker.**
